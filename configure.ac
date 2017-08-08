@@ -392,6 +392,10 @@ AC_SUBST(CABAL)
 AC_SUBST(RUNHASKELL)
 AM_CONDITIONAL(WITH_HASKELL, [test "$have_haskell" = "yes"])
 
+AX_THRIFT_LIB(cl, [Common Lisp], yes)
+have_cl="yes"
+AM_CONDITIONAL(WITH_CL, [test "$have_cl" = "yes"])
+
 AX_THRIFT_LIB(go, [Go], yes)
 if test "$with_go" = "yes";  then
   AC_PATH_PROG([GO], [go])
@@ -918,6 +922,7 @@ echo "Building D Library ........... : $have_d"
 echo "Building NodeJS Library ...... : $have_nodejs"
 echo "Building Lua Library ......... : $have_lua"
 echo "Building Rust Library ........ : $have_rs"
+echo "Building Common Lisp Library . : $have_cl"
 
 if test "$have_cpp" = "yes" ; then
   echo
