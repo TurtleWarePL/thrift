@@ -18,7 +18,9 @@
 #include <sstream>
 
 #include "thrift/platform.h"
-#include "t_oop_generator.h"
+#include "thrift/version.h"
+
+#include "thrift/generate/t_oop_generator.h"
 using namespace std;
 
 
@@ -128,12 +130,8 @@ void t_cl_generator::generate_enum(t_enum* tenum) {
   vector<t_enum_value*>::iterator c_iter;
   int value = -1;
   for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
-    if ((*c_iter)->has_value()) {
-      value = (*c_iter)->get_value();
-    } else {
-      ++value;
-    }
-
+    value = (*c_iter)->get_value();
+    
     if(c_iter != constants.begin()) f_ << endl << "\t ";
 
     f_ << "(\"" << (*c_iter)->get_name() << "\" . " << value << ")";
@@ -171,7 +169,8 @@ string t_cl_generator::render_const_value(t_type* type, t_const_value* value) {
     case t_base_type::TYPE_BOOL:
       out << (value->get_integer() > 0 ? "t" : "nil");
       break;
-    case t_base_type::TYPE_BYTE:
+      //case t_base_type::TYPE_BYTE:
+    case t_base_type::TYPE_I8:
     case t_base_type::TYPE_I16:
     case t_base_type::TYPE_I32:
     case t_base_type::TYPE_I64:
@@ -300,7 +299,7 @@ void t_cl_generator::generate_service(t_service* tservice) {
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::iterator f_iter;
 
-  if (tservice->get_extends() != NULL) {
+  if (tservice->get_extends()) {
     extends_client = type_name(tservice->get_extends());
   }
 
@@ -315,7 +314,7 @@ void t_cl_generator::generate_service(t_service* tservice) {
     string fname = (*f_iter)->get_name();
     string signature = function_signature(*f_iter);
 
-    f_ << endl << indent() << "(" << prefix(fname) << " " << ((*f_iter)->is_async() ? "t" : "nil")
+    f_ << endl << indent() << "(" << prefix(fname) << " " << "nil"
        << " " << typespec((*f_iter)->get_returntype()) << " ";
     generate_exception_sig(*f_iter);
     f_ << " " << signature << ")";
@@ -390,4 +389,4 @@ string t_cl_generator::type_name(t_type* ttype) {
   return prefix + name;
 }
 
-THRIFT_REGISTER_GENERATOR(cl, "Common Lisp", "");
+THRIFT_REGISTER_GENERATOR(cl, "Common Lisp", "")
