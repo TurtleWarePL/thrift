@@ -63,12 +63,12 @@
 
 (defclass ttransport () ())
 
-(defgeneric topenp ((tr ttransport)))
-(defgeneric topen ((tr ttransport)))
-(defgeneric tclose ((tr ttransport)))
-(defgeneric tread ((tr ttransport)))
-(defgeneric twrite ((tr ttransport) str))
-(defgeneric tflush ((tr ttransport)))
+(defgeneric topenp (tr))
+(defgeneric topen (tr))
+(defgeneric tclose (tr))
+(defgeneric tread (tr))
+(defgeneric twrite (tr str))
+(defgeneric tflush (tr))
 (defmethod treadall ((tr ttransport) len)
   (let ((a (make-array len :element-type '(unsigned-byte 8) :initial-element 0 :fill-pointer 0)))
     (dotimes (i len a)
@@ -375,7 +375,7 @@
 (defun struct-types (struct)
   ; with unintentional support for inheritance of structs
   (let* ((cls (find-class struct))
-         (par (car (mop:class-direct-superclasses cls)))) ; single
+         (par (car (c2mop:class-direct-superclasses cls)))) ; single
     (append (thrift-class-types cls)
             (if (or (eql par (find-class 'standard-object))
                     (eql par (find-class 'error)))
