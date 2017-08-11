@@ -375,7 +375,7 @@
 (defun struct-types (struct)
   ; with unintentional support for inheritance of structs
   (let* ((cls (find-class struct))
-         (par (car (c2mop:class-direct-superclasses cls)))) ; single
+         (par (car (mop:class-direct-superclasses cls)))) ; single
     (append (thrift-class-types cls)
             (if (or (eql par (find-class 'standard-object))
                     (eql par (find-class 'error)))
