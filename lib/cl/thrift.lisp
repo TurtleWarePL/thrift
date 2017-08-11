@@ -10,6 +10,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require 'asdf)
+  (asdf:oos 'asdf:load-op 'alexandria)
   (asdf:oos 'asdf:load-op 'usocket)
   (asdf:oos 'asdf:load-op 'trivial-utf-8)
   (asdf:oos 'asdf:load-op 'closer-mop))
