@@ -11,7 +11,8 @@
 (eval-when (compile load eval)
   (require 'asdf)
   (asdf:oos 'asdf:load-op 'usocket)
-  (asdf:oos 'asdf:load-op 'trivial-utf-8))
+  (asdf:oos 'asdf:load-op 'trivial-utf-8)
+  (asdf:oos 'asdf:load-op 'closer-mop))
 
 (in-package :thrift)
 
@@ -375,7 +376,7 @@
 (defun struct-types (struct)
   ; with unintentional support for inheritance of structs
   (let* ((cls (find-class struct))
-         (par (car (mop:class-direct-superclasses cls)))) ; single
+         (par (car (c2mop:class-direct-superclasses cls)))) ; single
     (append (thrift-class-types cls)
             (if (or (eql par (find-class 'standard-object))
                     (eql par (find-class 'error)))
