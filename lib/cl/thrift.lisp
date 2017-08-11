@@ -312,7 +312,7 @@
   (setf *gen-package* name))
 
 (defun str-sym (&rest strs)
-  (let* ((s (symbol-name (apply #'alexandria:symbolicate strs)))
+  (let* ((s (symbol-name (apply #'symbolicate strs)))
          (p (position #\: s))
          (pkg (gen-package)))
     (when p
