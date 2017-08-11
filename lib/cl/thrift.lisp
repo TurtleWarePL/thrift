@@ -1,18 +1,18 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (require 'asdf)
-  (asdf:oos 'asdf:load-op 'alexandria)
-  (asdf:oos 'asdf:load-op 'usocket)
-  (asdf:oos 'asdf:load-op 'trivial-utf-8)
-  (asdf:oos 'asdf:load-op 'closer-mop))
+  (require :asdf)
+  (asdf:oos 'asdf:load-op :alexandria)
+  (asdf:oos 'asdf:load-op :usocket)
+  (asdf:oos 'asdf:load-op :trivial-utf-8)
+  (asdf:oos 'asdf:load-op :closer-mop))
 
 (defpackage :thrift
-  (:use :asdf :common-lisp)
-  (:shadow :read-byte :write-byte :write-string)
-  (:import-from :alexandria #:symbolicate)
-  (:export serve simple-server handler
-           tsocket topen tclose
-           protocol binary-protocol
-           thrift-error protocol-error transport-error))
+  (:use #:common-lisp)
+  (:shadow #:read-byte #:write-byte #:write-string)
+  (:import-from #:alexandria #:symbolicate)
+  (:export #:serve #:simple-server #:handler
+           #:tsocket #:topen #:tclose
+           #:protocol #:binary-protocol
+           #:thrift-error #:protocol-error #:transport-error))
 
 (in-package :thrift)
 
