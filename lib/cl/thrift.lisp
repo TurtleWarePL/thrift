@@ -8,7 +8,7 @@
 
 (in-package :thrift)
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require 'asdf)
   (asdf:oos 'asdf:load-op 'usocket)
   (asdf:oos 'asdf:load-op 'trivial-utf-8)
@@ -16,7 +16,7 @@
 
 (in-package :thrift)
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun str (&rest args)
     (with-output-to-string (s)
       (dolist (x args)
