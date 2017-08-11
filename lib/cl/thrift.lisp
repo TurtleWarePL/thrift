@@ -348,6 +348,10 @@
 (defclass thrift-class (standard-class)
   ((types :initarg :types :accessor thrift-class-types)))
 
+(defmethod c2mop:validate-superclass ((class thrift-class)
+                                      (super standard-class))
+  T)
+
 (defmacro def-struct (name parent vars)
   `(defclass ,(str-sym name)
        ,(cond ((null parent) nil)
@@ -606,7 +610,7 @@
 
 (defun gen-processor (svc parent fns)
   (with-gensyms (hand name type seq iprot oprot fn fntbl rep msg)
-    `(let ((,fntbl (make-hash-table :test 'string=))
+    `(let ((,fntbl (make-hash-table :test 'equalp))
            (,rep #'identity))
        ,(gen-fntbl-entries svc parent fns fntbl)
        (defmethod process :around ((client ,svc) ,hand ,iprot ,oprot &optional ,msg)
