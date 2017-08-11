@@ -16,8 +16,6 @@
 
 (in-package :thrift)
 
-(in-package :thrift)
-
 (defmacro mvb (bin form &body body)
   `(multiple-value-bind ,bin ,form ,@body))
 
