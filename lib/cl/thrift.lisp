@@ -8,7 +8,7 @@
 (defpackage :thrift
   (:use #:common-lisp)
   (:shadow #:read-byte #:write-byte #:write-string)
-  (:import-from #:alexandria #:symbolicate)
+  (:import-from #:alexandria #:symbolicate #:with-gensyms)
   (:export #:serve #:simple-server #:handler
            #:tsocket #:topen #:tclose
            #:protocol #:binary-protocol
@@ -20,10 +20,6 @@
 
 (defmacro mvb (bin form &body body)
   `(multiple-value-bind ,bin ,form ,@body))
-
-(defmacro w/gensyms (syms &body b)
-  `(let ,(mapcar #'(lambda (s) `(,s (gensym))) syms)
-     ,@b))
 
 (defmacro pincf (place)
   `(prog1 ,place (incf ,place)))
@@ -445,7 +441,7 @@
      (write-struct-end ,prot)))
 
 (defun gen-recv-user-struct (prot type)
-  (w/gensyms (s)
+  (with-gensyms (s)
     (let ((struct (str-sym type)))
       `(let ((,s (make-instance ',struct)))
          ,(gen-recv-struct prot
@@ -457,7 +453,7 @@
 
 (defun gen-recv-struct (prot params)
   ; params => ( ((slot-value foostruct bar) i32 1) )
-  (w/gensyms (name type id loop break)
+  (with-gensyms (name type id loop break)
     `(progn
        (read-struct-begin ,prot)
        (tagbody ,loop
@@ -473,7 +469,7 @@
        (read-struct-end ,prot))))
 
 (defun gen-recv-map (prot mapt)
-  (w/gensyms (map k v size i key)
+  (with-gensyms (map k v size i key)
     `(let ((,map (make-hash-table :test 'equal))) ;should be eql?
        (mvb (,k ,v ,size) (read-map-begin ,prot)
          (dotimes (,i ,size)
@@ -483,7 +479,7 @@
        ,map)))
 
 (defun gen-write-map (prot mapt tbl)
-  (w/gensyms (k v)
+  (with-gensyms (k v)
     `(progn (write-map-begin ,prot
                              ,(typespec-ttype (car mapt))
                              ,(typespec-ttype (cadr mapt))
@@ -499,7 +495,7 @@
       (if (eql flavour 'list)
           '(read-list-begin read-list-end)
           '(read-set-begin read-set-end))
-    (w/gensyms (lst ty size i)
+    (with-gensyms (lst ty size i)
       `(let (,lst)
          (mvb (,ty ,size) (,read-begin ,prot)
            (dotimes (,i ,size)
@@ -518,7 +514,7 @@
       (if (eql flavour 'list)
           '(write-list-begin write-list-end)
           '(write-set-begin write-set-end))
-    (w/gensyms (x)
+    (with-gensyms (x)
       `(progn (,write-begin ,prot ,(typespec-ttype type) (length ,lst))
               (dolist (,x ,lst)
                 ,(gen-write-value prot type x))
@@ -532,7 +528,7 @@
 
 (defun gen-send-method (svc fn params tret async exceptions)
   (let ((names (strs-syms params :key #'car)))
-    (w/gensyms (gsvc gprot)
+    (with-gensyms (gsvc gprot)
       `(defmethod ,(str-sym fn) ((,gsvc ,svc) ,@names)
          (let ((,gprot (client-oprot ,gsvc)))
            (write-message-begin ,gprot ,fn ,(message-type 'call) (pincf (protocol-seq ,gprot)))
@@ -566,7 +562,7 @@
 
 (defun gen-recv (gsvc fn ret exceptions)
   (let ((exs (mapcar #'str-sym (mapcar #'car exceptions))))
-    (w/gensyms (gprot res)
+    (with-gensyms (gprot res)
       `(let ((,gprot (client-iprot ,gsvc))
              ,res ,@exs)
          (read-message-begin ,gprot)
@@ -579,7 +575,7 @@
 
 (defun gen-fn-responder (fnspec)
   ; TODO what if one of the functions is from a different package to *gen-package*?
-  (w/gensyms (iprot oprot hand res e)
+  (with-gensyms (iprot oprot hand res e)
     (labels ((respond (type params vals)
                `#'(lambda (,oprot)
                     (write-message-begin ,oprot ,(car fnspec) ,(message-type type)
@@ -610,7 +606,7 @@
                            fns))))
 
 (defun gen-processor (svc parent fns)
-  (w/gensyms (hand name type seq iprot oprot fn fntbl rep msg)
+  (with-gensyms (hand name type seq iprot oprot fn fntbl rep msg)
     `(let ((,fntbl (make-hash-table :test 'string=))
            (,rep #'identity))
        ,(gen-fntbl-entries svc parent fns fntbl)
