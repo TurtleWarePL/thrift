@@ -348,10 +348,20 @@
 (defclass thrift-class (standard-class)
   ((types :initarg :types :accessor thrift-class-types)))
 
+;;; FIXME: we don't need metaclass protocol to hold types, hash-table
+;;; would be sufficient. For now conclude, that this metaclass is
+;;; mundane enough to be compatible with basically anything. Note,
+;;; that we allow `def-struct' to subclass `error', which is a
+;;; condition, so we can't specialize on `standard-class'.
 (defmethod c2mop:validate-superclass ((class thrift-class)
-                                      (super standard-class))
+                                      super)
   T)
 
+;;; FIXME: we don't want to define conditions with
+;;; defclass. Preferably we should switch to hash-tables (see above)
+;;; to avoid meta-class *and* use `define-conditoin'. Temporary
+;;; workaround which should work is treating conditions as other
+;;; classes.
 (defmacro def-struct (name parent vars)
   `(defclass ,(str-sym name)
        ,(cond ((null parent) nil)
