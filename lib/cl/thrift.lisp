@@ -1,13 +1,3 @@
-(defpackage :thrift
-  (:use :asdf :common-lisp)
-  (:shadow :read-byte :write-byte :write-string)
-  (:export serve simple-server handler
-           tsocket topen tclose
-           protocol binary-protocol
-           thrift-error protocol-error transport-error))
-
-(in-package :thrift)
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require 'asdf)
   (asdf:oos 'asdf:load-op 'alexandria)
@@ -15,14 +5,18 @@
   (asdf:oos 'asdf:load-op 'trivial-utf-8)
   (asdf:oos 'asdf:load-op 'closer-mop))
 
+(defpackage :thrift
+  (:use :asdf :common-lisp)
+  (:shadow :read-byte :write-byte :write-string)
+  (:import-from :alexandria #:symbolicate)
+  (:export serve simple-server handler
+           tsocket topen tclose
+           protocol binary-protocol
+           thrift-error protocol-error transport-error))
+
 (in-package :thrift)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun str (&rest args)
-    (with-output-to-string (s)
-      (dolist (x args)
-        (princ x s))
-      S)))
+(in-package :thrift)
 
 (defmacro mvb (bin form &body body)
   `(multiple-value-bind ,bin ,form ,@body))
@@ -152,8 +146,8 @@
 
 (defun define-base-read-method (type)
   `(progn 
-     (defmethod ,(intern (str "READ-" type "-BEGIN")) ((prot protocol)))
-     (defmethod ,(intern (str "READ-" type "-END")) ((prot protocol)))))
+     (defmethod ,(symbolicate "READ-" type "-BEGIN") ((prot protocol)))
+     (defmethod ,(symbolicate "READ-" type "-END") ((prot protocol)))))
 
 (dolist (m *base-read-methods*)
   (eval (define-base-read-method m)))
@@ -213,7 +207,7 @@
   (let ((g (gensym)))
     `(let ((,g ,prot))
        ,@(mapcar #'(lambda (type val)
-                     (list (intern (str "WRITE-" type)) g val))
+                     (list (symbolicate "WRITE-" type) g val))
                  types values))))
 
 (defmethod write-message-begin ((prot binary-protocol) n ty s)
@@ -238,7 +232,7 @@
 
 (defmacro read-as (prot types)
   `(values ,@(mapcar #'(lambda (type)
-                         (list (intern (str "READ-" type)) prot))
+                         (list (symbolicate "READ-" type) prot))
                      types)))
 
 (defmethod read-byte ((prot binary-protocol))
@@ -405,11 +399,11 @@
               *types*)))
 
 (defun gen-prim-write-value (prot type val)
-  `(,(intern (string-upcase (str "write-" type)))
+  `(,(intern (string-upcase (symbolicate "write-" type)))
      ,prot ,val))
 
 (defun gen-prim-recv-value (prot type)
-  `(,(intern (string-upcase (str "read-" type))) ,prot))
+  `(,(intern (string-upcase (symbolicate "read-" type))) ,prot))
 
 (defun gen-write-value (prot type val)
   (labels ((fail () (error "invalid type: ~A" type)))
@@ -542,7 +536,7 @@
       `(defmethod ,(str-sym fn) ((,gsvc ,svc) ,@names)
          (let ((,gprot (client-oprot ,gsvc)))
            (write-message-begin ,gprot ,fn ,(message-type 'call) (pincf (protocol-seq ,gprot)))
-           ,(gen-write-struct gprot (str fn "_args")
+           ,(gen-write-struct gprot (symbolicate fn "_args")
                               params names)
            (write-message-end ,gprot)
            ,(unless async (gen-recv gsvc fn tret exceptions)))))))
@@ -590,7 +584,7 @@
                `#'(lambda (,oprot)
                     (write-message-begin ,oprot ,(car fnspec) ,(message-type type)
                                          (pincf (protocol-seq ,oprot)))
-                    ,(gen-write-struct oprot (str (car fnspec) "_result")
+                    ,(gen-write-struct oprot (symbolicate (car fnspec) "_result")
                                        params
                                        vals)
                    (write-message-end ,oprot))))
