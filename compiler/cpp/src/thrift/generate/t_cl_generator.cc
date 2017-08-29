@@ -54,6 +54,7 @@ class t_cl_generator : public t_oop_generator {
   void generate_exception_sig(t_function* f);
   std::string render_const_value(t_type* type, t_const_value* value);
 
+  std::string render_includes();
   std::string cl_autogen_comment();
   void package_def(std::ofstream &out, std::string name);
   std::string generated_package();
@@ -81,7 +82,8 @@ void t_cl_generator::init_generator() {
 
   string f_name = get_out_dir()+"/"+program_name_+".lisp";
   f_.open(f_name.c_str());
-  f_ << cl_autogen_comment() << endl;
+  f_ << cl_autogen_comment() << endl
+     << render_includes() << endl;
 
   package_def(f_, program_name_);
 }
@@ -97,6 +99,22 @@ string t_cl_generator::package() {
 
 string t_cl_generator::prefix(string symbol) {
   return "\"" + symbol + "\"";
+}
+
+/**
+ * Renders all the imports necessary for including another Thrift program
+ */
+string t_cl_generator::render_includes() {
+  const vector<t_program*>& includes = program_->get_includes();
+  string result = "";
+  for (size_t i = 0; i < includes.size(); ++i) {
+    result += "(load (compile-file (merge-pathnames \""
+      + underscore(includes[i]->get_name()) + ".lisp\" *load-truename*)))\n";
+  }
+  if (includes.size() > 0) {
+    result += "\n";
+  }
+  return result;
 }
 
 string t_cl_generator::cl_autogen_comment() {
