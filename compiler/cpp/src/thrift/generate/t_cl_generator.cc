@@ -108,8 +108,8 @@ string t_cl_generator::render_includes() {
   const vector<t_program*>& includes = program_->get_includes();
   string result = "";
   for (size_t i = 0; i < includes.size(); ++i) {
-    result += "(load (compile-file (merge-pathnames \""
-      + underscore(includes[i]->get_name()) + ".lisp\" *load-truename*)))\n";
+    result += "(load (merge-pathnames \""
+      + underscore(includes[i]->get_name()) + ".lisp\" *load-truename*))\n";
   }
   if (includes.size() > 0) {
     result += "\n";
