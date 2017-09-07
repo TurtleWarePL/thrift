@@ -132,12 +132,10 @@ string t_cl_generator::generated_package() {
 }
 
 void t_cl_generator::package_def(std::ofstream &out, string name) {
-  out << "(unless (find-package :" << package() << ")" << endl
-      << "  (defpackage :" << package() << " (:use :common-lisp)))" << endl
-      << "(in-package :thrift)" << endl
+  out << "(in-package :thrift)" << endl
+      << "(ensure-package :" << package() << " (:use :common-lisp))" << endl
       << "(set-thrift-package :" << package() << ")" << endl << endl;
 }
-
 
 void t_cl_generator::generate_typedef(t_typedef* ttypedef) {}
 

@@ -25,6 +25,11 @@
 (defmacro dsb (arglist expr &body b)
   `(destructuring-bind ,arglist ,expr ,@b))
 
+(defmacro ensure-package (package &rest options)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (unless (find-package ,package)
+       (defpackage ,package ,@options))))
+
 (define-condition thrift-error (error)
   ((message :initarg :message :initform "" :reader exception-message)))
 (defmethod print-object :after ((x thrift-error) stream)
@@ -303,8 +308,9 @@
 (defun gen-package ()
   (find-package *gen-package*))
 
-(defun set-thrift-package (name)
-  (setf *gen-package* name))
+(defmacro set-thrift-package (name)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (setf *gen-package* ,name)))
 
 (defun str-sym (&rest strs)
   (let* ((s (symbol-name (apply #'symbolicate strs)))
