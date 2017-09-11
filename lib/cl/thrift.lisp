@@ -559,7 +559,7 @@
       `(defmethod ,(str-sym fn) ((,gsvc ,svc) ,@names)
          (let ((,gprot (client-oprot ,gsvc)))
            (write-message-begin ,gprot ,fn ,(message-type 'call) (pincf (protocol-seq ,gprot)))
-           ,(gen-write-struct gprot (symbolicate fn "_args")
+           ,(gen-write-struct gprot (concatenate 'string fn "_args")
                               params names)
            (write-message-end ,gprot)
            ,(unless async (gen-recv gsvc fn tret exceptions)))))))
@@ -607,7 +607,7 @@
                `#'(lambda (,oprot)
                     (write-message-begin ,oprot ,(car fnspec) ,(message-type type)
                                          (pincf (protocol-seq ,oprot)))
-                    ,(gen-write-struct oprot (symbolicate (car fnspec) "_result")
+                    ,(gen-write-struct oprot (concatenate 'string (car fnspec) "_result")
                                        params
                                        vals)
                    (write-message-end ,oprot))))
