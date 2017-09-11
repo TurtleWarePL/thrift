@@ -180,16 +180,24 @@
   `(integer ,(- (expt 2 (1- bits))) ,(1- (expt 2 (1- bits)))))
 
 (defmethod write-i16 ((prot binary-protocol) val)
-  (declare (type (signed-integer 16) val))
+  (declare (type (signed-byte 16) val))
   (twrite (protocol-trans prot) (int-bytes val 2)))
 
 (defmethod write-i32 ((prot binary-protocol) val)
-  (declare (type (signed-integer 32) val))
+  (declare (type (signed-byte 32) val))
   (twrite (protocol-trans prot) (int-bytes val 4)))
 
 (defmethod write-i64 ((prot binary-protocol) val)
-  (declare (type (signed-integer 64) val))
+  (declare (type (signed-byte 64) val))
   (twrite (protocol-trans prot) (int-bytes val 8)))
+
+(defmethod write-u16 ((prot binary-protocol) val)
+  (declare (type (unsigned-byte 16) val))
+  (twrite (protocol-trans prot) (int-bytes val 4)))
+
+(defmethod write-u32 ((prot binary-protocol) val)
+  (declare (type unsigned-byte))
+  (twrite (protocol-trans prot) (int-bytes val 4)))
 
 (defmethod write-double ((prot binary-protocol) val)
   #+allegro (dolist (b (mapcar #'(lambda (x) (int-bytes x 2))
@@ -211,7 +219,7 @@
                  types values))))
 
 (defmethod write-message-begin ((prot binary-protocol) n ty s)
-  (write-as prot (i32 string i32)
+  (write-as prot (u32 string i32)
             (logior *binary-version-1* ty)
             n s))
 
