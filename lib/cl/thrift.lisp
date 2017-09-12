@@ -700,7 +700,7 @@
                        (tagbody loop
                           (handler-case
                               (progn
-                                (process client h iprot oprot)
+                                (process (make-instance client) h iprot oprot)
                                 (if (topenp cli)
                                     (go loop)
                                     (go close)))
