@@ -632,6 +632,9 @@
                                      (gen-fn-responder fnspec)))
                            fns))))
 
+(defgeneric process (client handler iprot oprot &optional msg)
+  (:method ((client client) handler iprot oprot &optional msg)))
+
 (defun gen-processor (svc parent fns)
   (with-gensyms (hand name type seq iprot oprot fn fntbl rep msg)
     `(let ((,fntbl (make-hash-table :test 'equalp))
