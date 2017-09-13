@@ -80,7 +80,7 @@
 (defun tsocket (host port)
   (make-instance 'tsocket :host host :port port))
 (defmethod topenp ((s tsocket))
-  ; usocket is crap, and can't actually test if sock has closed
+  ;; usocket is crap, and can't actually test if sock has closed
   (and (not (null (tsocket-sock s)))
        (open-stream-p (usocket:socket-stream (tsocket-sock s)))))
 (defmethod topen ((s tsocket))
@@ -95,9 +95,9 @@
            str
            (usocket:socket-stream (tsocket-sock s))))
 (defmethod tflush ((s tsocket))
-  ; should be provided by usocket; this won't always necessarily work
+  ;; should be provided by usocket; this won't always necessarily work
   (finish-output (usocket:socket-stream (tsocket-sock s))))
-  
+
 (defparameter *types*
   '((stop . 0)
     (void . 1)
@@ -302,7 +302,7 @@
                      (mapcar #'bytes-int (list (subseq b 0 2) (subseq b 2 4)
                                                (subseq b 4 6) (subseq b 6 8)))))
   #-allegro (error "read-double isn't implemented on this platform"))
-                  
+
 (defmethod read-bool ((prot binary-protocol))
   (= (read-byte prot) 1))
 
@@ -334,11 +334,11 @@
         (values "" ty 0)))) ; "" is the name, which isn't saved in binary prot
 
 (defmethod read-map-begin ((prot binary-protocol))
-  ; t_key t_val size
+  ;; t_key t_val size
   (read-as prot (byte byte i32)))
 
 (defmethod read-list-begin ((prot binary-protocol))
-  ; t_elt size
+  ;; t_elt size
   (read-as prot (byte i32)))
 
 (defmethod read-set-begin ((prot binary-protocol))
@@ -368,7 +368,7 @@
   (mapcar #'str-sym (mapcar key strs)))
 
 (defun sym-str (sym)
-  ; we don't preserve case. does anything in thrift care?
+  ;; we don't preserve case. does anything in thrift care?
   (string-downcase (string sym)))
 
 (defun key-str (str)
@@ -429,7 +429,7 @@
                        vars))))
 
 (defun struct-types (struct)
-  ; with unintentional support for inheritance of structs
+  ;; with unintentional support for inheritance of structs
   (let* ((cls (find-class struct))
          (par (car (c2mop:class-direct-superclasses cls)))) ; single
     (append (thrift-class-types cls)
@@ -486,12 +486,12 @@
 (defun gen-write-user-struct (prot type val)
   (let ((slots (struct-slots (str-sym (car type)))))
     (gen-write-struct prot (cadr type)
-                           (mapcar #'(lambda (x) (cons (sym-str (car x)) (cdr x)))
-                                   (struct-types (str-sym (car type))))
-                           (mapcar #'(lambda (slot) `(slot-value ,val ',slot)) slots))))
-         
+		      (mapcar #'(lambda (x) (cons (sym-str (car x)) (cdr x)))
+			      (struct-types (str-sym (car type))))
+		      (mapcar #'(lambda (slot) `(slot-value ,val ',slot)) slots))))
+
 (defun gen-write-struct (prot name params vals)
-  ; params => ( ("foo" i32 1) )
+  ;; params => ( ("foo" i32 1) )
   `(progn
      (write-struct-begin ,prot ,name)
      ,@(mapcar #'(lambda (param val)
@@ -516,7 +516,7 @@
          ,s))))
 
 (defun gen-recv-struct (prot params)
-  ; params => ( ((slot-value foostruct bar) i32 1) )
+  ;; params => ( ((slot-value foostruct bar) i32 1) )
   (with-gensyms (name type id loop break)
     `(progn
        (read-struct-begin ,prot)
@@ -642,7 +642,7 @@
          ,res))))
 
 (defun gen-fn-responder (fnspec)
-  ; TODO what if one of the functions is from a different package to *gen-package*?
+  ;; TODO what if one of the functions is from a different package to *gen-package*?
   (with-gensyms (iprot oprot hand res e)
     (labels ((respond (type params vals)
                `#'(lambda (,oprot)
@@ -651,7 +651,7 @@
                     ,(gen-write-struct oprot (concatenate 'string (car fnspec) "_result")
                                        params
                                        vals)
-                   (write-message-end ,oprot))))
+		    (write-message-end ,oprot))))
       (let ((args (mapcar #'(lambda (a) (str-sym (car a))) (fifth fnspec))))
         `#'(lambda (,iprot ,hand)
              (let ,args
@@ -662,9 +662,9 @@
                                          (fifth fnspec)))
                (handler-case (let ((,res (,(str-sym (car fnspec)) ,hand ,@args)))
                                ,(respond 'reply `(("success" ,(third fnspec) 0)) (list res)))
-               ,@(mapcar #'(lambda (ex)
-                             `(,(str-sym (cadadr ex)) (,e) ,(respond 'reply (list ex) (list e))))
-                         (fourth fnspec)))))))))                                      
+		 ,@(mapcar #'(lambda (ex)
+			       `(,(str-sym (cadadr ex)) (,e) ,(respond 'reply (list ex) (list e))))
+			   (fourth fnspec)))))))))                                      
 
 (defun gen-fntbl-entries (svc parent fns fntbl)
   (declare (ignorable svc parent))
@@ -684,20 +684,20 @@
            (,rep #'identity))
        ,(gen-fntbl-entries svc parent fns fntbl)
        (defmethod process :around ((client ,svc) ,hand ,iprot ,oprot &optional ,msg)
-         (let (,name ,type ,seq)
-           (if ,msg
-               (dsb (name type seq) ,msg (setf ,name name ,type type ,seq seq))
-               (mvb (name type seq) (read-message-begin ,iprot)
-                 (setf ,name (bytes-string name) ,type type ,seq seq)))
-           (when (= ,type ,(message-type 'call))
-             (let ((,fn (gethash ,name ,fntbl)))
-               (if ,fn 
-                   (setf ,rep (funcall ,fn ,iprot ,hand))
-                   (if (next-method-p)
-                       (call-next-method client ,hand ,iprot ,oprot (list ,name ,type ,seq))
-                       (error "~A: method not found" ,name)))))
-           (read-message-end ,iprot)
-           (funcall ,rep ,oprot))))))
+		  (let (,name ,type ,seq)
+		    (if ,msg
+			(dsb (name type seq) ,msg (setf ,name name ,type type ,seq seq))
+			(mvb (name type seq) (read-message-begin ,iprot)
+			  (setf ,name (bytes-string name) ,type type ,seq seq)))
+		    (when (= ,type ,(message-type 'call))
+		      (let ((,fn (gethash ,name ,fntbl)))
+			(if ,fn 
+			    (setf ,rep (funcall ,fn ,iprot ,hand))
+			    (if (next-method-p)
+				(call-next-method client ,hand ,iprot ,oprot (list ,name ,type ,seq))
+				(error "~A: method not found" ,name)))))
+		    (read-message-end ,iprot)
+		    (funcall ,rep ,oprot))))))
 
 (defmacro def-service (name parent &rest fns)
   (let ((svc (service-name name)))
@@ -763,7 +763,7 @@
                             (protocol-error (e)
 			      (declare (ignore e))
                               (go close)))                          
-                          close                          
+			close                          
                           (tclose itr)
                           (tclose otr))))
     (server-close s)))
