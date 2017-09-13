@@ -522,7 +522,7 @@
        (read-struct-begin ,prot)
        (tagbody ,loop
           (mvb (,name ,type ,id) (read-field-begin ,prot)
-	    (declare (ignorable ,name))
+	    (declare (ignorable ,name ,id))
             (when (= ,type ,(ttype stop)) (go ,break))
             ,@(mapcar #'(lambda (p)
                           `(when (= ,id ,(third p))
@@ -661,6 +661,7 @@
                                                    (cdr argspec)))
                                          (fifth fnspec)))
                (handler-case (let ((,res (,(str-sym (car fnspec)) ,hand ,@args)))
+			       (declare (ignorable ,res))
                                ,(respond 'reply `(("success" ,(third fnspec) 0)) (list res)))
 		 ,@(mapcar #'(lambda (ex)
 			       `(,(str-sym (cadadr ex)) (,e) ,(respond 'reply (list ex) (list e))))
