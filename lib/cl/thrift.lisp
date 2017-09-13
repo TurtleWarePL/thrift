@@ -89,7 +89,7 @@
 (defmethod tclose ((s tsocket))
   (when (tsocket-sock s) (usocket:socket-close (tsocket-sock s))))
 (defmethod tread ((s tsocket))
-  (cl:read-byte (usocket:socket-stream (tsocket-sock s)) nil 'eof))
+  (cl:read-byte (usocket:socket-stream (tsocket-sock s)) nil 0))
 (defmethod twrite ((s tsocket) str)
   (funcall (if (arrayp str) #'write-sequence #'cl:write-byte)
            str
@@ -745,7 +745,7 @@
 
 (defun simple-server (host port)
   (make-instance 'simple-server
-                 :trans (usocket:socket-listen host port :reuseaddress t)))
+                 :trans (usocket:socket-listen host port :reuseaddress t :element-type '(unsigned-byte 8))))
 
 (defmethod serve ((s simple-server) client &optional (h (make-instance 'handler)))
   (unwind-protect (loop 
