@@ -28,7 +28,9 @@
 (defmacro ensure-package (package &rest options)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (unless (find-package ,package)
-       (defpackage ,package ,@options))))
+       (defpackage ,package
+	 ,@options
+	 (:use #:thrift)))))
 
 (define-condition thrift-error (error)
   ((message :initarg :message :initform "" :reader exception-message)))
