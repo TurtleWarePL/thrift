@@ -388,7 +388,7 @@
 				   vals)))))))
 
 (defmacro def-constant (name val)
-  `(setf ,(str-sym name) ,val))
+  `(defparameter ,(str-sym name) ,val))
 
 (defmacro def-hash-table (&rest tups)
   `(let ((tbl (make-hash-table :test 'equal)))
