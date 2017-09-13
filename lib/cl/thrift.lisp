@@ -376,9 +376,9 @@
   (let ((name (key-str name)))
     `(defmethod ,(gpkg "enum") ((name (eql ,name)) val)
        (cdr (assoc val ',(mapcar #'(lambda (tup)
-                                     (cons (key-str (car tup))
-                                           (cdr tup)))
-                                 vals))))))
+				     (cons (key-str (car tup))
+					   (cdr tup)))
+				 vals))))))
 
 (defmacro def-constant (name val)
   `(setf ,(str-sym name) ,val))
@@ -515,6 +515,7 @@
        (read-struct-begin ,prot)
        (tagbody ,loop
           (mvb (,name ,type ,id) (read-field-begin ,prot)
+	    (declare (ignorable ,name))
             (when (= ,type ,(ttype stop)) (go ,break))
             ,@(mapcar #'(lambda (p)
                           `(when (= ,id ,(third p))
@@ -620,6 +621,7 @@
           (t (fail)))))
 
 (defun gen-recv (gsvc fn ret exceptions)
+  (declare (ignorable fn))
   (let ((exs (mapcar #'str-sym (mapcar #'car exceptions))))
     (with-gensyms (gprot res)
       `(let ((,gprot (client-iprot ,gsvc))
@@ -658,6 +660,7 @@
                          (fourth fnspec)))))))))                                      
 
 (defun gen-fntbl-entries (svc parent fns fntbl)
+  (declare (ignorable svc parent))
   `(setf ,@(reduce #'append
                    (mapcar #'(lambda (fnspec)
                                (list `(gethash ,(car fnspec) ,fntbl)
@@ -665,7 +668,8 @@
                            fns))))
 
 (defgeneric process (client handler iprot oprot &optional msg)
-  (:method ((client client) handler iprot oprot &optional msg)))
+  (:method ((client client) handler iprot oprot &optional msg)
+    (declare (ignorable msg))))
 
 (defun gen-processor (svc parent fns)
   (with-gensyms (hand name type seq iprot oprot fn fntbl rep msg)
@@ -750,6 +754,7 @@
                                     (go loop)
                                     (go close)))
                             (protocol-error (e)
+			      (declare (ignore e))
                               (go close)))                          
                           close                          
                           (tclose itr)
