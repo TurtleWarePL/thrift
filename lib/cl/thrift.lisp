@@ -379,11 +379,13 @@
 
 (defmacro def-enum (name vals)
   (let ((name (key-str name)))
-    `(defmethod ,(gpkg "enum") ((name (eql ,name)) val)
-       (cdr (assoc val ',(mapcar #'(lambda (tup)
-				     (cons (key-str (car tup))
-					   (cdr tup)))
-				 vals))))))
+    `(progn
+       (defgeneric ,(gpkg "enum") (name val))
+       (defmethod ,(gpkg "enum") ((name (eql ,name)) val)
+	 (cdr (assoc val ',(mapcar #'(lambda (tup)
+				       (cons (key-str (car tup))
+					     (cdr tup)))
+				   vals)))))))
 
 (defmacro def-constant (name val)
   `(setf ,(str-sym name) ,val))
