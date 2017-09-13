@@ -380,8 +380,8 @@
 (defmacro def-enum (name vals)
   (let ((name (key-str name)))
     `(progn
-       (defgeneric ,(gpkg "enum") (name val))
-       (defmethod ,(gpkg "enum") ((name (eql ,name)) val)
+       (defgeneric ,(gpkg "ENUM") (name val))
+       (defmethod ,(gpkg "ENUM") ((name (eql ,name)) val)
 	 (cdr (assoc val ',(mapcar #'(lambda (tup)
 				       (cons (key-str (car tup))
 					     (cdr tup)))
