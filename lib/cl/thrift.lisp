@@ -416,7 +416,7 @@
 
 ;;; FIXME: we don't want to define conditions with
 ;;; defclass. Preferably we should switch to hash-tables (see above)
-;;; to avoid meta-class *and* use `define-conditoin'. Temporary
+;;; to avoid meta-class *and* use `define-condition'. Temporary
 ;;; workaround which should work is treating conditions as other
 ;;; classes.
 (defmacro def-struct (name parent vars)
