@@ -21,4 +21,6 @@
 			     :num1 15
 			     :num2 10
 			     :comment "Hi")))
-    (format t "15 - 10 = ~a~%" (calculate calc 1 work))))
+    (format t "15 - 10 = ~a~%~%" (calculate calc 1 work)))
+  (format t "Check log: ~a~%~%" (sharedstruct-value (getstruct calc 1)))
+  (close-client calc))

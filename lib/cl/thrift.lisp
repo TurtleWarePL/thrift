@@ -12,7 +12,8 @@
   (:export #:serve #:simple-server #:handler
            #:tsocket #:topen #:tclose
            #:protocol #:binary-protocol
-           #:thrift-error #:protocol-error #:transport-error))
+           #:thrift-error #:protocol-error #:transport-error
+	   #:close-client))
 
 (in-package :thrift)
 
@@ -129,6 +130,8 @@
 (defclass protocol ()
   ((trans :initarg :trans :accessor protocol-trans)
    (seq :initform 0 :accessor protocol-seq)))
+
+(defgeneric close-protocol (prot))
 
 (defgeneric write-message-begin (prot name type seq))
 (defgeneric write-message-end (prot))
@@ -344,6 +347,9 @@
 (defmethod read-set-begin ((prot binary-protocol))
   (read-list-begin prot))
 
+(defmethod close-protocol ((prot binary-protocol))
+  (tclose (protocol-trans prot)))
+
 ;; generation
 
 (defvar *gen-package* nil)
@@ -444,6 +450,10 @@
 (defclass client ()
   ((oprot :initarg :oprot :accessor client-oprot)
    (iprot :initarg :iprot :accessor client-iprot)))
+
+(defgeneric close-client (cli)
+  (:method ((cli client))
+    (close-protocol (client-iprot cli))))
 
 (defun binary-client (client host port)
   (let ((s (tsocket host port)))
