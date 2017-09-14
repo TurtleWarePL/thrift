@@ -3,7 +3,8 @@
   (asdf:oos 'asdf:load-op :alexandria)
   (asdf:oos 'asdf:load-op :usocket)
   (asdf:oos 'asdf:load-op :trivial-utf-8)
-  (asdf:oos 'asdf:load-op :closer-mop))
+  (asdf:oos 'asdf:load-op :closer-mop)
+  (asdf:oos 'asdf:load-op :ieee-floats))
 
 (defpackage :thrift
   (:use #:common-lisp)
@@ -238,11 +239,7 @@
   (twrite (protocol-trans prot) (int-bytes val 4)))
 
 (defmethod write-double ((prot binary-protocol) val)
-  #+allegro (dolist (b (mapcar #'(lambda (x) (int-bytes x 2))
-                               (multiple-value-list (excl:double-float-to-shorts
-                                                     (coerce val 'double-float)))))
-              (twrite (protocol-trans prot) b))
-  #-allegro (error "write-double isn't implemented on this platform"))
+  (twrite (protocol-trans prot) (int-bytes (ieee-floats:encode-float64 val) 8)))
 
 (defmethod write-string ((prot binary-protocol) val)
   (write-i32 prot (length val))
@@ -300,11 +297,7 @@
   (bytes-int (treadall (protocol-trans prot) 8)))
 
 (defmethod read-double ((prot binary-protocol))
-  #+allegro (let ((b (treadall (protocol-trans prot) 8)))
-              (apply #'excl:shorts-to-double-float
-                     (mapcar #'bytes-int (list (subseq b 0 2) (subseq b 2 4)
-                                               (subseq b 4 6) (subseq b 6 8)))))
-  #-allegro (error "read-double isn't implemented on this platform"))
+  (ieee-floats:decode-float64 (bytes-int (treadall (protocol-trans prot) 8))))
 
 (defmethod read-bool ((prot binary-protocol))
   (= (read-byte prot) 1))
