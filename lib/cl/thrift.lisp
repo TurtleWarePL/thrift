@@ -287,6 +287,9 @@
         (- 0 (logxor (- val 1) (1- (expt 256 (length bytes)))))
         val)))
 
+(defun bytes-uint (bytes &aux (m 0))
+  (reduce #'(lambda (tot n) (+ tot (* n (expt 256 (incf m))))) (reverse bytes)))
+
 (defmethod read-i16 ((prot binary-protocol))
   (bytes-int (treadall (protocol-trans prot) 2)))
 
@@ -297,7 +300,7 @@
   (bytes-int (treadall (protocol-trans prot) 8)))
 
 (defmethod read-double ((prot binary-protocol))
-  (ieee-floats:decode-float64 (bytes-int (treadall (protocol-trans prot) 8))))
+  (ieee-floats:decode-float64 (bytes-uint (treadall (protocol-trans prot) 8))))
 
 (defmethod read-bool ((prot binary-protocol))
   (= (read-byte prot) 1))
