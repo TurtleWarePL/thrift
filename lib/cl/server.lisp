@@ -151,62 +151,62 @@
   (:method ((location puri:uri) service)
     "Given a basic thrift uri, open a binary socket server and listen on the port."
     (let ((server (make-instance 'socket-server
-                    :socket (usocket:socket-listen (puri:uri-host location) (puri:uri-port location)
-                                                   :element-type 'unsigned-byte
-                                                   :reuseaddress t))))
+				 :socket (usocket:socket-listen (puri:uri-host location) (puri:uri-port location)
+								:element-type 'unsigned-byte
+								:reuseaddress t))))
       (unwind-protect (serve server service)
         (server-close server))))
 
-  (:method ((s socket-server) (service service))
+  (:method ((s socket-server) service)
     (loop 
-      (let ((connection (accept-connection s)))
-        (if (open-stream-p (usocket:socket-stream connection))
-          (let* ((input-transport (server-input-transport s connection))
-                 (output-transport (server-output-transport s connection))
-                 (protocol (server-protocol s input-transport output-transport)))
-            (unwind-protect (block :process-loop
-                              (handler-bind ((end-of-file (lambda (eof)
-                                                            (declare (ignore eof))
-                                                            (return-from :process-loop)))
-                                             (error (lambda (error)
-                                                      (if *debug-server*
-                                                        (break "Server error: ~s: ~a" s error)
-                                                        (warn "Server error: ~s: ~a" s error))
-                                                      (stream-write-exception protocol error)
-                                                      (return-from :process-loop))))
-                                (loop (unless (open-stream-p input-transport) (return))
-                                      (process service protocol))))
-              (close input-transport)
-              (close output-transport)))
-          ;; listening socket closed
-          (return))))))
+       (let ((connection (accept-connection s)))
+	 (if (open-stream-p (usocket:socket-stream connection))
+	     (let* ((input-transport (server-input-transport s connection))
+		    (output-transport (server-output-transport s connection))
+		    (protocol (server-protocol s input-transport output-transport))
+		    (multiplex (listp service)))
+	       (unless service (error "No services to provide."))
+	       (unwind-protect (block :process-loop
+				 (handler-bind ((end-of-file (lambda (eof)
+							       (declare (ignore eof))
+							       (return-from :process-loop)))
+						(error (lambda (error)
+							 (if *debug-server*
+							     (break "Server error: ~s: ~a" s error)
+							     (warn "Server error: ~s: ~a" s error))
+							 (stream-write-exception protocol error)
+							 (return-from :process-loop))))
+				   (loop (unless (open-stream-p input-transport) (return))
+                                      (process service protocol multiplex))))
+		 (close input-transport)
+		 (close output-transport)))
+	     ;; listening socket closed
+	     (return))))))
 
-  
-(defgeneric process (service protocol)
-  (:documentation "Combine a service PEER with an input-protocol and an output-protocol to control processing
- the next message on the peer's input connection. The base method reads the message, decodes the
- function and the arguments, invokes the method, and replies with the results.
- The protocols are initially those of the peer itself, but they are passed her in order to permit
- wrapping for logging, etc.")
-
-  (:method ((service service) (protocol t))
-    (flet ((consume-message ()
-             (prog1 (stream-read-struct protocol)
-               (stream-read-message-end protocol))))
-      (multiple-value-bind (request-identifier type sequence-number)
-                           (stream-read-message-begin protocol)
-        (ecase type
-          ((call oneway)
-           (multiple-value-bind (request-method service)
-                                (method-definition service request-identifier)
-             (cond (request-method
-                    (let ((*package* (service-package service)))
-                      (funcall request-method service sequence-number protocol)))
-                   (t
-                    (unknown-method protocol request-identifier sequence-number (consume-message))))))
-          (reply
-           (unexpected-response protocol request-identifier sequence-number (consume-message)))
-          (exception
-           (request-exception protocol request-identifier sequence-number (consume-message))))))))
-
+(defun process (services protocol multiplex)
+  (flet ((consume-message ()
+	   (prog1 (stream-read-struct protocol)
+	     (stream-read-message-end protocol))))
+    (multiple-value-bind (request-identifier type sequence-number)
+	(stream-read-message-begin protocol)
+      (let ((service services))
+	(when multiplex
+	  (multiple-value-setq (service request-identifier) (split-once #\: request-identifier))
+	  (setf service (find service
+			      services
+			      :test #'string=
+			      :key #'service-identifier)))
+	(ecase type
+	  ((call oneway)
+	   (multiple-value-bind (request-method service)
+	       (method-definition service request-identifier)
+	     (cond (request-method
+		    (let ((*package* (service-package service)))
+		      (funcall request-method service sequence-number protocol)))
+		   (t
+		    (unknown-method protocol request-identifier sequence-number (consume-message))))))
+	  (reply
+	   (unexpected-response protocol request-identifier sequence-number (consume-message)))
+	  (exception
+	   (request-exception protocol request-identifier sequence-number (consume-message))))))))
 
