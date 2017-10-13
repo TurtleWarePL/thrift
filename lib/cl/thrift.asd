@@ -34,6 +34,7 @@
  services protocol."
   :serial t
   :components ((:file "package")
+	       (:file "util")
                (:file "symbols")
                (:file "types")
                (:file "parameters")
