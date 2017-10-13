@@ -1,4 +1,4 @@
-(in-package :org.apache.thrift.implementation)
+(in-package #:org.apache.thrift.implementation)
 
 ;;; This file defines the abstract and metaclass definitions for the `org.apache.thrift` library.
 ;;;
@@ -387,13 +387,3 @@
     (class-name class))
   (:method ((class thrift-exception-class))
     (class-condition-class class)))
-
-
-;;;
-;;; exceptions
-
-(defmethod unknown-field ((class thrift-class) (name t) (id t) (type t) (value t))
-  "The default method for thrift classes does nothing, which is intended to leave the final
- disposition to the protocol."
-
-  nil)
