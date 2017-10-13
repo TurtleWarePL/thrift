@@ -56,7 +56,7 @@
    :class-identifier
    :class-not-found
    :class-not-found-error
-   :client with-client
+   :client :with-client :with-service
    :def-constant
    :def-enum
    :def-exception

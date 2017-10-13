@@ -21,7 +21,7 @@
 ;;; specific language governing permissions and limitations
 ;;; under the License.
 
-
+(defvar *current-service* nil)
 
 (defgeneric client (location &key protocol direction element-type &allow-other-keys)
   (:method ((location puri:uri) &rest initargs &key (direction :io) (element-type 'unsigned-byte et-s) &allow-other-keys)
@@ -76,3 +76,7 @@
     (unwind-protect (funcall op protocol)
       (when (open-stream-p protocol)
         (close protocol)))))
+
+(defmacro with-service (service &body body)
+  `(let ((*current-service* (service-identifier ,service)))
+     ,@body))

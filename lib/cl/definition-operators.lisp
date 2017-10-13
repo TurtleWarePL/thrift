@@ -353,7 +353,14 @@
          #+ccl (ccl::record-arglist ',name '(protocol ,@parameter-names))
          (defmethod ,name ((,gprot protocol) ,@(mapcar #'list parameter-names type-names))
            ,@(when documentation `(,documentation))
-           (stream-write-message-begin ,gprot ,identifier 'call
+           (stream-write-message-begin ,gprot
+				       (if thrift.implementation::*current-service*
+					   (concatenate 'string
+							thrift.implementation::*current-service*
+							":"
+							,identifier)
+					    ,identifier)
+				       'call
                                        (protocol-next-sequence-number ,gprot))
            ;; use the respective args structure as a template to generate the message
            (stream-write-struct ,gprot (thrift:list ,@(mapcar #'(lambda (id name) `(cons ,id ,name)) parameter-ids parameter-names))
