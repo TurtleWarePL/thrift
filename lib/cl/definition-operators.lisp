@@ -96,15 +96,16 @@
 ;;; definition operators
 
 (defmacro def-package (name &key use)
-  (let ((implementation-name (cons-symbol :keyword name :-implementation))
+  (let ((base-package-name (cons-symbol :keyword name))
+        (implementation-name (cons-symbol :keyword name :-implementation))
         (response-name (cons-symbol :keyword name :-response)))
     `(eval-when (:load-toplevel :compile-toplevel :execute)
-       (unless (find-package ,name)
-         (defpackage ,name
+       (unless (find-package ,base-package-name)
+         (defpackage ,base-package-name
            (:use :thrift ,@use)
            (:import-from :common-lisp nil t)
            (:documentation ,(format nil "This is the application interface package for ~a.
- It uses the generic THRIFT package for access to the library interface." name))))
+ It uses the generic THRIFT package for access to the library interface." base-package-name))))
        
        (unless (find-package ,implementation-name)
          (defpackage ,implementation-name
@@ -359,12 +360,8 @@
     
     (with-gensyms (gprot extra-initargs)
       `(progn
-         (ensure-generic-function ',name
-                                  :lambda-list '(protocol ,@parameter-names)
-                                  :generic-function-class 'thrift-request-function
-                                  :identifier ,identifier)
-         #+ccl (ccl::record-arglist ',name '(protocol ,@parameter-names))
-         (defmethod ,name ((,gprot protocol) ,@(mapcar #'list parameter-names type-names))
+         (declaim (ftype (function (protocol ,@type-names)) ,name))
+         (defun ,name (,gprot ,@parameter-names)
            ,@(when documentation `(,documentation))
            (stream-write-message-begin ,gprot ,identifier 'call
                                        (protocol-next-sequence-number ,gprot))
@@ -431,18 +428,10 @@
 				  (apply #',implementation ,@parameter-names ,extra-args)
 				  (,implementation ,@parameter-names))))
       `(progn (declaim (ftype (function ,(make-list parameter-count :initial-element t)) ,implementation))
-	      (ensure-generic-function ',name
-				       :lambda-list '(service sequence-number protocol)
-				       :generic-function-class 'thrift-response-function
-				       :identifier ,identifier
-				       :implementation-function
-				       ,(etypecase implementation
-					  ;; defer the evaluation
-					  (symbol `(quote ,implementation))
-					  ((cons (eql lambda)) `(function ,implementation))))
-	      #+ccl (ccl::record-arglist ',name '(service sequence-number protocol))
-	      (defmethod ,name ((,service t) (,seq t) (,gprot protocol))
+              (declaim (ftype (function (t t protocol)) ,name))
+	      (defun ,name (,service ,seq ,gprot)
 		,@(when documentation `(,documentation))
+                (declare (ignore ,service))
 		(let (,@(mapcar #'list parameter-names defaults)
 		      (,extra-args nil))
 		  ,(generate-struct-decoder gprot `(find-thrift-class ',(str-sym call-struct))
@@ -480,6 +469,39 @@
                          expression))))))))
 
 
+(defun %generate-method (method-declaration)
+  (destructuring-bind (identifier (parameter-list return-type) &key (oneway nil) (exceptions nil)
+                                  (implementation-function-name (implementation-str-sym identifier))
+                                  documentation)
+      (rest method-declaration)
+    (let* ((call-struct-identifier (str identifier "_args"))
+           (reply-struct-identifier (str identifier "_result"))
+           (request-function-name (str-sym identifier))
+           (response-function-name (response-str-sym identifier)))
+      `((eval-when (:compile-toplevel :load-toplevel :execute)
+          (def-struct ,call-struct-identifier
+              ,(mapcar #'parm-to-field-decl parameter-list))
+          (def-struct ,reply-struct-identifier
+              (,@(unless (eq return-type 'void) `(("success" nil :id 0 :type ,return-type)))
+                 ,@exceptions)))
+        (shadow 'implementation-function-name (symbol-package ',implementation-function-name))
+        (export ',request-function-name (symbol-package ',request-function-name))
+        (export ',response-function-name (symbol-package ',response-function-name))
+        (def-request-method ,request-function-name (,parameter-list ,return-type)
+          (:identifier ,identifier)
+          ,@(when documentation `((:documentation ,(string-trim *whitespace* documentation))))
+          (:call-struct ,call-struct-identifier)
+          (:reply-struct ,reply-struct-identifier)
+          ,@(when exceptions `((:exceptions ,@exceptions)))
+          ,@(when oneway `((:oneway t))))
+        (def-response-method ,response-function-name (,parameter-list ,return-type)
+          (:identifier ,identifier)
+          (:call-struct ,call-struct-identifier)
+          (:reply-struct ,reply-struct-identifier)
+          (:implementation-function ,implementation-function-name)
+          ,@(when exceptions `((:exceptions ,@exceptions)))
+          ,@(when oneway `((:oneway t))))))))
+
 (defmacro def-service (identifier base-services &rest options)
   "Given the external name for the service, an optional inheritance list, slot definitions
  and a list of method declarations, construct a class definition which include the precedence and the
@@ -505,40 +527,7 @@
                                             ,(mapcar #'str-sym (mapcar #'first parameter-list))
                                             ,return-type))))
 
-    `(progn ,@(mapcan #'(lambda (method-declaration)
-                          (destructuring-bind (identifier (parameter-list return-type) &key (oneway nil) (exceptions nil)
-                                                          (implementation-function-name (implementation-str-sym identifier))
-                                                          documentation)
-                                              (rest method-declaration)
-                            (let* ((call-struct-identifier (str identifier "_args"))
-                                   (reply-struct-identifier (str identifier "_result"))
-                                   (request-function-name (str-sym identifier))
-                                   (response-function-name (response-str-sym identifier)))
-                              `((eval-when (:compile-toplevel :load-toplevel :execute)
-                                  (def-struct ,call-struct-identifier
-                                    ,(mapcar #'parm-to-field-decl parameter-list))
-                                  (def-struct ,reply-struct-identifier
-                                    (,@(unless (eq return-type 'void) `(("success" nil :id 0 :type ,return-type)))
-                                     ,@exceptions)))
-                                (shadow 'implementation-function-name (symbol-package ',implementation-function-name))
-                                (export ',request-function-name (symbol-package ',request-function-name))
-                                (export ',response-function-name (symbol-package ',response-function-name))
-                                (def-request-method ,request-function-name (,parameter-list ,return-type)
-                                  (:identifier ,identifier)
-                                  ,@(when documentation `((:documentation ,(string-trim *whitespace* documentation))))
-                                  (:call-struct ,call-struct-identifier)
-                                  (:reply-struct ,reply-struct-identifier)
-                                  ,@(when exceptions `((:exceptions ,@exceptions)))
-                                  ,@(when oneway `((:oneway t))))
-                                (def-response-method ,response-function-name (,parameter-list ,return-type)
-                                  (:identifier ,identifier)
-                                  (:call-struct ,call-struct-identifier)
-                                  (:reply-struct ,reply-struct-identifier)
-                                  (:implementation-function ,implementation-function-name)
-                                  ,@(when exceptions `((:exceptions ,@exceptions)))
-                                  ,@(when oneway `((:oneway t))))))))
-                      methods)
-
+    `(progn ,@(mapcan #'%generate-method methods)
             ;; export the service name only
             (eval-when (:compile-toplevel :load-toplevel :execute)
               (export ',name))
@@ -547,9 +536,8 @@
             (defparameter ,name
               (make-instance ',class
                 :identifier ,identifier
-                :base-services (list ,@(mapcar #'str-sym (if (listp base-services) base-services (list base-services))))
-                :methods ',(mapcar #'(lambda (identifier name) `(,identifier . ,name))
-                                   identifiers response-names)
+                :base-services (list ,@(mapcar #'str-sym (alexandria:ensure-list base-services)))
+                :methods ',(mapcar #'cons identifiers response-names)
                 :documentation ,(format nil "~@[~a~%---~%~]~(~{~{~a~24t~a : ~a~}~^~%~}~)"
                                         documentation (sort method-interfaces #'string-lessp :key #'first))
                 ,@initargs)))))
