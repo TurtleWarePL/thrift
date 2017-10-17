@@ -11,9 +11,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -71,7 +71,7 @@
 ;;;
 ;;; classes
 
-(defclass transport (#+sbcl sb-gray:fundamental-stream #+ccl stream)
+(defclass transport (trivial-gray-streams:fundamental-stream)
   ((stream :reader transport-stream)
    (direction :initarg :direction :accessor stream-direction))
   (:documentation "The abstract transport class is a specialized stream which wraps a base binary
@@ -108,7 +108,7 @@
   (when d-s
     (setf initargs (copy-list initargs))
     (remf initargs :direction))
-  
+
   (make-instance 'socket-transport
     :direction direction
     :socket (apply #'usocket:socket-connect (puri:uri-host location) (puri:uri-port location)
@@ -165,48 +165,33 @@
     (apply #'transport-close stream args)
     t))
 
-
-#-sbcl
 (defmethod stream-finish-output ((transport transport))
-  (stream-finish-output (transport-stream transport)))
-#+sbcl
-(defmethod stream-finish-output ((transport transport))
+  #-(or sbcl ccl)
+  (stream-finish-output (transport-stream transport))
+  #+(or sbcl ccl)
   (finish-output (transport-stream transport)))
 
-#-sbcl
 (defmethod stream-force-output ((transport transport))
-  (stream-force-output (transport-stream transport)))
-#+sbcl
-(defmethod stream-force-output ((transport transport))
+  #-(or sbcl ccl)
+  (stream-force-output (transport-stream transport))
+  #+ccl
+  (ccl:stream-force-output (transport-stream transport))
+  #+sbcl
   (force-output (transport-stream transport)))
-
 
 ;;;
 ;;; input
 
-#-sbcl
 (defmethod stream-read-byte ((transport binary-transport))
-  (let ((unsigned-byte (stream-read-byte (transport-stream transport))))
+  (let ((unsigned-byte
+         #-(or sbcl ccl)(stream-read-byte (transport-stream transport))
+         #+ccl(ccl:stream-read-byte (transport-stream transport))
+         #+sbcl(read-byte (transport-stream transport))))
     (if unsigned-byte
-      (signed-byte-8 unsigned-byte)
-      (error 'end-of-file :stream (transport-stream transport)))))
-#+sbcl
-(defmethod stream-read-byte ((transport binary-transport))
-  (let ((unsigned-byte (read-byte (transport-stream transport))))
-    (signed-byte-8 unsigned-byte)))
+        (signed-byte-8 unsigned-byte)
+        (error 'end-of-file :stream (transport-stream transport)))))
 
-
-#-(or mcl sbcl)
-(defmethod stream-read-sequence ((transport binary-transport) (sequence vector) &optional (start 0) (end nil))
-  (stream-read-sequence (transport-stream transport) sequence start end))
-
-#+mcl
-(defmethod stream-read-sequence ((transport binary-transport) (sequence vector) &rest args)
-  (declare (dynamic-extent args))
-  (apply #'stream-read-sequence (transport-stream transport) sequence args))
-
-#+sbcl
-(defmethod stream-read-sequence ((transport binary-transport) (sequence vector) &optional (start 0) (end nil))
+(defmethod stream-read-sequence ((transport binary-transport) (sequence vector) start end &key)
   (unless (= (read-sequence sequence (transport-stream transport) :start start :end end)
              (or end (length sequence)))
     (error 'end-of-file :stream (transport-stream transport))))
@@ -214,23 +199,10 @@
 ;;;
 ;;; output
 
-#-sbcl
 (defmethod stream-write-byte ((transport binary-transport) byte)
-  (stream-write-byte (transport-stream transport) (unsigned-byte-8 byte)))
-#+sbcl
-(defmethod stream-write-byte ((transport binary-transport) byte)
-  (write-byte (unsigned-byte-8 byte) (transport-stream transport)))
+  #-(or ccl sbcl)(stream-write-byte (transport-stream transport) (unsigned-byte-8 byte))
+  #+ccl(ccl:stream-write-byte (transport-stream transport) (unsigned-byte-8 byte))
+  #+sbcl(write-byte (unsigned-byte-8 byte) (transport-stream transport)))
 
-
-#-(or mcl sbcl)
-(defmethod stream-write-sequence ((transport binary-transport) (sequence vector) &optional (start 0) (end nil))
-  (stream-write-sequence (transport-stream transport) sequence start end))
-
-#+mcl
-(defmethod stream-write-sequence ((transport binary-transport) (sequence vector) &rest args)
-  (declare (dynamic-extent args))
-  (apply #'stream-write-sequence (transport-stream transport) sequence args))
-
-#+sbcl
-(defmethod stream-write-sequence ((transport binary-transport) (sequence vector) &optional (start 0) (end nil))
+(defmethod stream-write-sequence ((transport binary-transport) (sequence vector) start end &key)
   (write-sequence sequence (transport-stream transport) :start start :end end))

@@ -11,9 +11,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,7 +28,7 @@
   ((field-id-mode :initform :identifier-number :allocation :class)
    (struct-id-mode :initform :none :allocation :class))
   (:default-initargs
-    :version-id #x80
+   :version-id #x80
     :version-number #x01))
 
 
@@ -79,17 +79,17 @@
                 (declare (dynamic-extent buffer)
                          (type (simple-array (unsigned-byte 8) (,byte-count)) buffer)
                          (type (unsigned-byte ,(* byte-count 8)) value))
-                (stream-read-sequence (protocol-input-transport ,protocol) buffer)
+                (stream-read-sequence (protocol-input-transport ,protocol) buffer 0 nil)
                 ,@(loop for i from 0 below byte-count
-                        collect `(setf value ,(if (= i 0)
-                                                `(aref buffer ,i)
-                                                `(+ (ash value 8) (aref buffer ,i)))))
+                     collect `(setf value ,(if (= i 0)
+                                               `(aref buffer ,i)
+                                               `(+ (ash value 8) (aref buffer ,i)))))
                 ;; (format *trace-output* "(in 0x~16,'0x)" value)
                 (,(cons-symbol :org.apache.thrift.implementation
                                :signed-byte- (prin1-to-string bit-count)) value))))
   (defmethod stream-read-i16 ((protocol binary-protocol))
     (read-and-decode-integer protocol 2))
-  
+
   (defmethod stream-read-i32 ((protocol binary-protocol))
     (read-and-decode-integer protocol 4))
 
@@ -99,18 +99,18 @@
 
 (defmethod stream-read-double ((protocol binary-protocol))
   (let ((value 0)
-	(buffer (make-array 8 :element-type '(unsigned-byte 8))))
+        (buffer (make-array 8 :element-type '(unsigned-byte 8))))
     (declare (dynamic-extent buffer)
-	     (type (simple-array (unsigned-byte 8) (8)) buffer)
-	     (type (unsigned-byte 64) value))
-    (stream-read-sequence (protocol-input-transport protocol) buffer)
+             (type (simple-array (unsigned-byte 8) (8)) buffer)
+             (type (unsigned-byte 64) value))
+    (stream-read-sequence (protocol-input-transport protocol) buffer 0 nil)
     ;; it it matters, could unwrap it with fewer intermediates saves
     (macrolet ((unpack-buffer ()
-		 `(progn
-		    ,@(loop for i from 0 below 8
-			 collect `(setf value ,(if (= i 0)
-						   `(aref buffer ,i)
-                                                              `(+ (ash value 8) (aref buffer ,i))))))))
+                 `(progn
+                    ,@(loop for i from 0 below 8
+                         collect `(setf value ,(if (= i 0)
+                                                   `(aref buffer ,i)
+                                                   `(+ (ash value 8) (aref buffer ,i))))))))
       (unpack-buffer)
       (ieee-floats:decode-float64 value))))
 
@@ -123,23 +123,23 @@
     (declare (dynamic-extent buffer)
              (type (simple-array (unsigned-byte 8) (4)) buffer)
              (type (unsigned-byte 32) value))
-    (stream-read-sequence (protocol-input-transport protocol) buffer)
+    (stream-read-sequence (protocol-input-transport protocol) buffer 0 nil)
     ;; it it matters, could unwrap it with fewer intermediates saves
     (macrolet ((unpack-buffer ()
                  `(progn
                     ,@(loop for i from 0 below 4
-                            collect `(setf value ,(if (= i 0)
-                                                    `(aref buffer ,i)
-                                                    `(+ (ash value 8) (aref buffer ,i))))))))
+                         collect `(setf value ,(if (= i 0)
+                                                   `(aref buffer ,i)
+                                                   `(+ (ash value 8) (aref buffer ,i))))))))
       (unpack-buffer)
       (ieee-floats:decode-float32 value))))
 
-            
+
 (defmethod stream-read-string ((protocol binary-protocol))
   (let* ((l (stream-read-i32 protocol))
          (a (make-array l :element-type *binary-transport-element-type*)))
     (declare (dynamic-extent a))
-    (stream-read-sequence (protocol-input-transport protocol) a)
+    (stream-read-sequence (protocol-input-transport protocol) a 0 nil)
     (funcall (transport-string-decoder protocol) a)))
 
 
@@ -152,9 +152,9 @@
   (let* ((l (stream-read-i32 protocol))
          (result (make-array l :element-type *binary-transport-element-type*)))
     ;; would need to check the length before trying stack allocation
-    (stream-read-sequence (protocol-input-transport protocol) result)
+    (stream-read-sequence (protocol-input-transport protocol) result 0 nil)
     result))
-  
+
 
 
 
@@ -189,9 +189,9 @@
                 (locally (declare (type (signed-byte ,(* byte-count 8)) ,value))
                   ;; (format *trace-output* "~%(out 0x~16,'0x)" ,value)
                   ,@(loop for i from (1- byte-count) downto 0
-                          append `((setf (aref buffer ,i) (logand #xff ,value))
-                                   (setf ,value (ash ,value -8))))
-                  (stream-write-sequence (protocol-output-transport ,protocol) buffer)
+                       append `((setf (aref buffer ,i) (logand #xff ,value))
+                                (setf ,value (ash ,value -8))))
+                  (stream-write-sequence (protocol-output-transport ,protocol) buffer 0 nil)
                   ,byte-count))))
   ;; no sign conversion as shift&mask encodes the sign bit
   (defmethod stream-write-i16 ((protocol binary-protocol) val)
@@ -207,20 +207,20 @@
 (defmethod stream-write-double ((protocol binary-protocol) val)
   ;; distinct from i64, as it's unsigned
   (let ((buffer (make-array 8 :element-type '(unsigned-byte 8)))
-	(int-value (ieee-floats:encode-float64 val)))
+        (int-value (ieee-floats:encode-float64 val)))
     (declare (dynamic-extent buffer)
-	     (type (simple-array (unsigned-byte 8) (8)) buffer)
-	     (type (unsigned-byte 64) int-value))
-              ;; if the conversion is correct, this is redundant, sbcl eliminate it
+             (type (simple-array (unsigned-byte 8) (8)) buffer)
+             (type (unsigned-byte 64) int-value))
+    ;; if the conversion is correct, this is redundant, sbcl eliminate it
     (assert  (typep int-value '(unsigned-byte 64)) ()
-	     'type-error :datum int-value :expected-type '(unsigned-byte 64))
+             'type-error :datum int-value :expected-type '(unsigned-byte 64))
     ;; (format *trace-output* "~%(out 0x~16,'0x)" int-value)
     (macrolet ((pack-buffer ()
-		 `(progn ,@(loop for i from 7 downto 0
-			      append `((setf (aref buffer ,i) (logand #xff int-value))
-                                                    (setf int-value (ash int-value -8)))))))
-                (pack-buffer))
-    (stream-write-sequence (protocol-output-transport protocol) buffer)
+                 `(progn ,@(loop for i from 7 downto 0
+                              append `((setf (aref buffer ,i) (logand #xff int-value))
+                                       (setf int-value (ash int-value -8)))))))
+      (pack-buffer))
+    (stream-write-sequence (protocol-output-transport protocol) buffer 0 nil)
     8))
 
 (defmethod stream-write-float ((protocol binary-protocol) val)
@@ -236,10 +236,10 @@
     ;; (format *trace-output* "~%(out 0x~16,'0x)" int-value)
     (macrolet ((pack-buffer ()
                  `(progn ,@(loop for i from 3 downto 0
-                                 append `((setf (aref buffer ,i) (logand #xff int-value))
-                                          (setf int-value (ash int-value -8)))))))
+                              append `((setf (aref buffer ,i) (logand #xff int-value))
+                                       (setf int-value (ash int-value -8)))))))
       (pack-buffer))
-    (stream-write-sequence (protocol-output-transport protocol) buffer)
+    (stream-write-sequence (protocol-output-transport protocol) buffer 0 nil)
     4))
 
 
@@ -248,14 +248,14 @@
           "Substring writes are not supported.")
   (let ((bytes (funcall (transport-string-encoder protocol) string)))
     (stream-write-i32 protocol (length bytes))
-    (stream-write-sequence (protocol-output-transport protocol) bytes)
+    (stream-write-sequence (protocol-output-transport protocol) bytes 0 nil)
     (+ 4 (length bytes))))
 
 (defmethod stream-write-string ((protocol binary-protocol) (bytes vector) &optional (start 0) end)
   (assert (and (zerop start) (or (null end) (= end (length bytes)))) ()
           "Substring writes are not supported.")
   (stream-write-i32 protocol (length bytes))
-  (stream-write-sequence (protocol-output-transport protocol) bytes)
+  (stream-write-sequence (protocol-output-transport protocol) bytes 0 nil)
   (+ 4 (length bytes)))
 
 
@@ -263,11 +263,11 @@
   (let ((unsigned-bytes (make-array (length bytes) :element-type '(unsigned-byte 8))))
     (stream-write-i32 protocol (length bytes))
     (map-into unsigned-bytes #'unsigned-byte-8 bytes)
-    (stream-write-sequence (protocol-output-transport protocol) unsigned-bytes)
+    (stream-write-sequence (protocol-output-transport protocol) unsigned-bytes 0 nil)
     (+ 4 (length bytes))))
 
 (defmethod stream-write-binary ((protocol binary-protocol) (string string))
   (let ((bytes (funcall (transport-string-encoder protocol) string)))
     (stream-write-i32 protocol (length bytes))
-    (stream-write-sequence (protocol-output-transport protocol) bytes)
+    (stream-write-sequence (protocol-output-transport protocol) bytes 0 nil)
     (+ 4 (length bytes))))
