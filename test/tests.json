@@ -645,7 +645,7 @@
       "command": ["TestServer"],
       "workdir": "cl",
       "protocols": ["binary"],
-      "transports": ["buffered"],
+      "transports": ["buffered", "framed"],
       "sockets": ["ip"]
     },
     "client": {
