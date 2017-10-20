@@ -49,8 +49,8 @@
       (setf initargs (copy-list initargs))
       (remf initargs :protocol))
     (apply #'make-instance protocol
-      :input-transport (thrift:protocol-input-transport protocol)
-      :output-transport (thrift:protocol-output-transport protocol)
+      :input-transport (thrift:protocol-input-transport instance)
+      :output-transport (thrift:protocol-output-transport instance)
       :direction direction
       initargs))
 
