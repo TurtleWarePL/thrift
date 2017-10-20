@@ -346,7 +346,8 @@
  the request/reply process, and the result decoding. Return the result value or signal an
  exception as per the response."
 
-  (let* ((method-identifier (or (second (assoc :method-identifier options)) (string name)))
+  (let* ((service-identifier (second (assoc :service-identifier options)))
+         (method-identifier (or (second (assoc :method-identifier options)) (string name)))
          (documentation (second (assoc :documentation options)))
          (exceptions (rest (assoc :exceptions options)))
          (exception-names (mapcar #'str-sym (mapcar #'car exceptions)))
@@ -360,12 +361,18 @@
                            (str method-identifier "_result")))
          (success (str-sym "success")))
     
-    (with-gensyms (gprot extra-initargs)
+    (with-gensyms (gprot identifier extra-initargs)
       `(progn
          (declaim (ftype (function (protocol ,@type-names)) ,name))
-         (defun ,name (,gprot ,@parameter-names)
+         (defun ,name (,gprot ,@parameter-names
+                       &aux (,identifier (if (protocol-multiplexed-p ,gprot)
+                                             (concatenate 'string
+                                                          ,service-identifier
+                                                          ":"
+                                                          ,method-identifier)
+                                             ,method-identifier)))
            ,@(when documentation `(,documentation))
-           (stream-write-message-begin ,gprot ,method-identifier 'call
+           (stream-write-message-begin ,gprot ,identifier 'call
                                        (protocol-next-sequence-number ,gprot))
            ;; use the respective args structure as a template to generate the message
            (stream-write-struct ,gprot (thrift:list ,@(mapcar #'(lambda (id name) `(cons ,id ,name)) parameter-ids parameter-names))
@@ -376,9 +383,9 @@
                    (stream-read-message-begin ,gprot)
                  (unless (eql sequence (protocol-sequence-number ,gprot))
                    (invalid-sequence-number ,gprot sequence (protocol-sequence-number ,gprot)))
-                 (unless (equal ,method-identifier request-message-identifier)
+                 (unless (equal ,identifier request-message-identifier)
                    (warn "response does not match request: ~s, ~s."
-                         ,method-identifier request-message-identifier))
+                         ,identifier request-message-identifier))
                  (ecase type
                    (reply
                     (let (,@(unless (eq return-type 'void) `((,success nil)))
@@ -412,10 +419,9 @@
   "Generate a response function definition.
  The method is defined with three arguments, a service, a sequence number and a protocol.
  The default method decodes the declared argument struct, invokes the base operator and, depending
- on the return type, encodes a response message. The given sequence number is reused in the response.
- The service argument is available for specialization, but otherwise ignored."
+ on the return type, encodes a response message. The given sequence number is reused in the response."
   
-  (with-gensyms (service seq gprot extra-args)
+  (with-gensyms (service identifier seq gprot extra-args)
     (let* ((method-identifier (or (second (assoc :method-identifier options)) (string name)))
            (documentation (second (assoc :documentation options)))
            (oneway-p (second (assoc :oneway options)))
@@ -438,6 +444,12 @@
 		,@(when documentation `(,documentation))
                 (declare (ignore ,service))
 		(let (,@(mapcar #'list parameter-names defaults)
+                      (,identifier (if (protocol-multiplexed-p ,gprot)
+                                       (concatenate 'string
+                                                    (service-identifier ,service)
+                                                    ":"
+                                                    ,method-identifier)
+                                       ,method-identifier))
 		      (,extra-args nil))
 		  ,(generate-struct-decoder gprot `(find-thrift-class ',(str-sym call-struct))
 					    (mapcar #'parm-to-field-decl parameter-list) extra-args)
@@ -447,12 +459,12 @@
 				((eq return-type 'void)
 				 `(prog1
                                       ,application-form
-				    (stream-write-message-begin ,gprot ,method-identifier 'reply ,seq)
+				    (stream-write-message-begin ,gprot ,identifier 'reply ,seq)
 				    (stream-write-struct ,gprot (thrift:list) ',(str-sym reply-struct))
 				    (stream-write-message-end ,gprot)))
 				(t
 				 `(let ((result ,application-form))
-				    (stream-write-message-begin ,gprot ,method-identifier 'reply ,seq)
+				    (stream-write-message-begin ,gprot ,identifier 'reply ,seq)
 				    (stream-write-struct ,gprot (thrift:list (cons 0 result)) ',(str-sym reply-struct))
 				    (stream-write-message-end ,gprot)
 				    result)))))
@@ -466,7 +478,7 @@
 					     `(,(str-sym external-exception-type) (condition)
 						;; sent as a reply in order to effect operation-specific exception
 						;; processing.
-						(stream-write-message-begin ,gprot ,method-identifier 'reply ,seq)
+						(stream-write-message-begin ,gprot ,identifier 'reply ,seq)
 						(stream-write-struct ,gprot (thrift:list (cons ,id condition))
 								     ',(str-sym reply-struct))
 						(stream-write-message-end ,gprot)
