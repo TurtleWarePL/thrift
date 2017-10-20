@@ -54,7 +54,7 @@
                                                "thrift://127.0.0.1:"
                                                port))
                   thrift.test:thrift-test
-                  framed))
+                  :framed framed))
   (clon:exit))
 
 (clon:dump "TestServer" main)
