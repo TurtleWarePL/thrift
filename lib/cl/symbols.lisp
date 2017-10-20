@@ -32,12 +32,12 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)          ; for batch compilation
 
   (defun implementation-package ()
-    (let ((package (concatenate 'string (package-name *package*) (string :-implementation))))
+    (let ((package (alexandria:symbolicate (package-name *package*) "-IMPLEMENTATION")))
       (or (find-package package)
           (make-package package :use nil))))
   
   (defun response-package ()
-    (let ((package (concatenate 'string (package-name *package*) (string :-response))))
+    (let ((package (alexandria:symbolicate (package-name *package*) "-RESPONSE")))
       (or (find-package package)
           (make-package package :use nil))))
 
