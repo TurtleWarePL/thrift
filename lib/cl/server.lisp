@@ -105,11 +105,11 @@
   (:method ((service service) (identifier string))
     (let ((fun (gethash identifier (service-methods service))))
       (if fun
-        (values fun service)
-        (dolist (base-service (service-base-services service))
-          (multiple-value-bind (fun service)
-                               (method-definition base-service identifier)
-            (when fun (return-from method-definition (values fun service)))))))))
+          (values fun service)
+          (dolist (base-service (service-base-services service))
+            (multiple-value-bind (fun service)
+                (method-definition base-service identifier)
+              (when fun (return-from method-definition (values fun service)))))))))
 
 (defgeneric (setf method-definition) (function service identifier)
   (:method ((function function) (service service) (identifier string))
@@ -177,8 +177,8 @@
                                                             (warn "Server error: ~s: ~a" s error))
                                                         (stream-write-exception protocol error)
                                                         (return-from :process-loop))))
-                                  (loop (unless (open-stream-p input-transport) (return))
-                                     (process service protocol))))
+                                  (loop while (open-stream-p input-transport)
+                                     do (process services protocol))))
               (close input-transport)
               (close output-transport))))   
           ;; listening socket closed
@@ -197,11 +197,11 @@
              (prog1 (stream-read-struct protocol)
                (stream-read-message-end protocol))))
       (multiple-value-bind (request-identifier type sequence-number)
-                           (stream-read-message-begin protocol)
+          (stream-read-message-begin protocol)
         (ecase type
           ((call oneway)
            (multiple-value-bind (request-method service)
-                                (method-definition service request-identifier)
+               (method-definition service request-identifier)
              (cond (request-method
                     (let ((*package* (service-package service)))
                       (funcall request-method service sequence-number protocol)))
