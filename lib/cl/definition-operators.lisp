@@ -346,7 +346,7 @@
  the request/reply process, and the result decoding. Return the result value or signal an
  exception as per the response."
 
-  (let* ((identifier (or (second (assoc :identifier options)) (string name)))
+  (let* ((method-identifier (or (second (assoc :method-identifier options)) (string name)))
          (documentation (second (assoc :documentation options)))
          (exceptions (rest (assoc :exceptions options)))
          (exception-names (mapcar #'str-sym (mapcar #'car exceptions)))
@@ -354,8 +354,10 @@
          (parameter-names (mapcar #'(lambda (a) (str-sym (first a))) parameter-list))
          (parameter-ids (mapcar #'third parameter-list))
          (type-names (mapcar #'(lambda (a) (type-name-class (second a))) parameter-list))
-         (call-struct (or (second (assoc :call-struct options)) (str identifier "_args")))
-         (reply-struct (or (second (assoc :reply-struct-type options)) (str identifier "_result")))
+         (call-struct (or (second (assoc :call-struct options))
+                          (str method-identifier "_args")))
+         (reply-struct (or (second (assoc :reply-struct-type options))
+                           (str method-identifier "_result")))
          (success (str-sym "success")))
     
     (with-gensyms (gprot extra-initargs)
@@ -363,7 +365,7 @@
          (declaim (ftype (function (protocol ,@type-names)) ,name))
          (defun ,name (,gprot ,@parameter-names)
            ,@(when documentation `(,documentation))
-           (stream-write-message-begin ,gprot ,identifier 'call
+           (stream-write-message-begin ,gprot ,method-identifier 'call
                                        (protocol-next-sequence-number ,gprot))
            ;; use the respective args structure as a template to generate the message
            (stream-write-struct ,gprot (thrift:list ,@(mapcar #'(lambda (id name) `(cons ,id ,name)) parameter-ids parameter-names))
@@ -374,8 +376,9 @@
                    (stream-read-message-begin ,gprot)
                  (unless (eql sequence (protocol-sequence-number ,gprot))
                    (invalid-sequence-number ,gprot sequence (protocol-sequence-number ,gprot)))
-                 (unless (equal ,identifier request-message-identifier)
-                   (warn "response does not match request: ~s, ~s." ,identifier request-message-identifier))
+                 (unless (equal ,method-identifier request-message-identifier)
+                   (warn "response does not match request: ~s, ~s."
+                         ,method-identifier request-message-identifier))
                  (ecase type
                    (reply
                     (let (,@(unless (eq return-type 'void) `((,success nil)))
@@ -413,7 +416,7 @@
  The service argument is available for specialization, but otherwise ignored."
   
   (with-gensyms (service seq gprot extra-args)
-    (let* ((identifier (or (second (assoc :identifier options)) (string name)))
+    (let* ((method-identifier (or (second (assoc :method-identifier options)) (string name)))
            (documentation (second (assoc :documentation options)))
            (oneway-p (second (assoc :oneway options)))
            (implementation (or (second (assoc :implementation-function options))
@@ -421,8 +424,10 @@
            (parameter-names (mapcar #'(lambda (a) (str-sym (first a))) parameter-list))
 	   (parameter-count (length parameter-list))
            (defaults (mapcar #'(lambda (a) (fourth a)) parameter-list))
-           (call-struct (or (second (assoc :call-struct options)) (str identifier "_args")))
-           (reply-struct (or (second (assoc :reply-struct options)) (str identifier "_result")))
+           (call-struct (or (second (assoc :call-struct options))
+                            (str method-identifier "_args")))
+           (reply-struct (or (second (assoc :reply-struct options))
+                             (str method-identifier "_result")))
            (exceptions (rest (assoc :exceptions options)))
            (application-form `(if ,extra-args
 				  (apply #',implementation ,@parameter-names ,extra-args)
@@ -442,12 +447,12 @@
 				((eq return-type 'void)
 				 `(prog1
                                       ,application-form
-				    (stream-write-message-begin ,gprot ,identifier 'reply ,seq)
+				    (stream-write-message-begin ,gprot ,method-identifier 'reply ,seq)
 				    (stream-write-struct ,gprot (thrift:list) ',(str-sym reply-struct))
 				    (stream-write-message-end ,gprot)))
 				(t
 				 `(let ((result ,application-form))
-				    (stream-write-message-begin ,gprot ,identifier 'reply ,seq)
+				    (stream-write-message-begin ,gprot ,method-identifier 'reply ,seq)
 				    (stream-write-struct ,gprot (thrift:list (cons 0 result)) ',(str-sym reply-struct))
 				    (stream-write-message-end ,gprot)
 				    result)))))
@@ -461,7 +466,7 @@
 					     `(,(str-sym external-exception-type) (condition)
 						;; sent as a reply in order to effect operation-specific exception
 						;; processing.
-						(stream-write-message-begin ,gprot ,identifier 'reply ,seq)
+						(stream-write-message-begin ,gprot ,method-identifier 'reply ,seq)
 						(stream-write-struct ,gprot (thrift:list (cons ,id condition))
 								     ',(str-sym reply-struct))
 						(stream-write-message-end ,gprot)
@@ -469,33 +474,37 @@
                          expression))))))))
 
 
-(defun %generate-method (method-declaration)
-  (destructuring-bind (identifier (parameter-list return-type) &key (oneway nil) (exceptions nil)
-                                  (implementation-function-name (implementation-str-sym identifier))
-                                  documentation)
+(defun %generate-method (service-identifier method-declaration)
+  (destructuring-bind (method-identifier
+                       (parameter-list return-type)
+                       &key (oneway nil) (exceptions nil)
+                       (implementation-function-name (implementation-str-sym method-identifier))
+                       documentation)
       (rest method-declaration)
-    (let* ((call-struct-identifier (str identifier "_args"))
-           (reply-struct-identifier (str identifier "_result"))
-           (request-function-name (str-sym identifier))
-           (response-function-name (response-str-sym identifier)))
+    (let* ((call-struct-identifier (str method-identifier "_args"))
+           (reply-struct-identifier (str method-identifier "_result"))
+           (request-function-name (str-sym method-identifier))
+           (response-function-name (response-str-sym method-identifier)))
       `((eval-when (:compile-toplevel :load-toplevel :execute)
           (def-struct ,call-struct-identifier
               ,(mapcar #'parm-to-field-decl parameter-list))
           (def-struct ,reply-struct-identifier
               (,@(unless (eq return-type 'void) `(("success" nil :id 0 :type ,return-type)))
                  ,@exceptions)))
-        (shadow 'implementation-function-name (symbol-package ',implementation-function-name))
+        (shadow ',implementation-function-name (symbol-package ',implementation-function-name))
         (export ',request-function-name (symbol-package ',request-function-name))
         (export ',response-function-name (symbol-package ',response-function-name))
         (def-request-method ,request-function-name (,parameter-list ,return-type)
-          (:identifier ,identifier)
+          (:service-identifier ,service-identifier)
+          (:method-identifier ,method-identifier)
           ,@(when documentation `((:documentation ,(string-trim *whitespace* documentation))))
           (:call-struct ,call-struct-identifier)
           (:reply-struct ,reply-struct-identifier)
           ,@(when exceptions `((:exceptions ,@exceptions)))
           ,@(when oneway `((:oneway t))))
         (def-response-method ,response-function-name (,parameter-list ,return-type)
-          (:identifier ,identifier)
+          (:service-identifier ,service-identifier)
+          (:method-identifier ,method-identifier)
           (:call-struct ,call-struct-identifier)
           (:reply-struct ,reply-struct-identifier)
           (:implementation-function ,implementation-function-name)
@@ -527,7 +536,7 @@
                                             ,(mapcar #'str-sym (mapcar #'first parameter-list))
                                             ,return-type))))
 
-    `(progn ,@(mapcan #'%generate-method methods)
+    `(progn ,@(mapcan (alexandria:curry #'%generate-method identifier) methods)
             ;; export the service name only
             (eval-when (:compile-toplevel :load-toplevel :execute)
               (export ',name))
