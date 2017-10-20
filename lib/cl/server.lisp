@@ -102,6 +102,18 @@
     (format stream "~@[~a~]" (service-identifier object))))
 
 (defgeneric method-definition (service identifier)
+  (:method ((service (eql nil)) identifier))
+  (:method ((services list) (identifier string))
+    (alexandria:if-let ((pos (position #\: identifier)))
+      (method-definition (find (subseq identifier 0 pos)
+                               services
+                               :test #'string=
+                               :key #'service-identifier)
+                         (subseq identifier (1+ pos)))
+      (dolist (base-service services)
+        (multiple-value-bind (fun service)
+            (method-definition base-service identifier)
+          (when fun (return-from method-definition (values fun service)))))))
   (:method ((service service) (identifier string))
     (let ((fun (gethash identifier (service-methods service))))
       (if fun
@@ -151,13 +163,15 @@
   (:method ((location puri:uri) service &optional (framed nil))
     "Given a basic thrift uri, open a binary socket server and listen on the port."
     (let ((server (make-instance 'socket-server
-                    :socket (usocket:socket-listen (puri:uri-host location) (puri:uri-port location)
-                                                   :element-type 'unsigned-byte
-                                                   :reuseaddress t))))
-      (unwind-protect (serve server service framed)
+                                 :socket (usocket:socket-listen (puri:uri-host location)
+                                                                (puri:uri-port location)
+                                                                :element-type 'unsigned-byte
+                                                                :reuseaddress t)
+                                 :services (alexandria:ensure-list service))))
+      (unwind-protect (serve server (server-services server) framed)
         (server-close server))))
 
-  (:method ((s socket-server) (service service) &optional (framed nil))
+  (:method ((s socket-server) (services list) &optional (framed nil))
     (loop 
       (let ((connection (accept-connection s)))
         (if (open-stream-p (usocket:socket-stream connection))
@@ -191,8 +205,7 @@
  function and the arguments, invokes the method, and replies with the results.
  The protocols are initially those of the peer itself, but they are passed her in order to permit
  wrapping for logging, etc.")
-
-  (:method ((service service) (protocol t))
+  (:method ((services list) (protocol protocol))
     (flet ((consume-message ()
              (prog1 (stream-read-struct protocol)
                (stream-read-message-end protocol))))
@@ -201,7 +214,7 @@
         (ecase type
           ((call oneway)
            (multiple-value-bind (request-method service)
-               (method-definition service request-identifier)
+               (method-definition services request-identifier)
              (cond (request-method
                     (let ((*package* (service-package service)))
                       (funcall request-method service sequence-number protocol)))
