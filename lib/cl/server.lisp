@@ -156,11 +156,12 @@
 
 (defparameter *debug-server* t)
 
-(defgeneric serve (connection-server service &optional framed)
+(defgeneric serve (connection-server service &key &allow-other-keys)
   (:documentation "Accept to a CONNECTION-SERVER, configure the CLIENT's transport and protocol
  in combination with the connection, and process messages until the connection closes.")
 
-  (:method ((location puri:uri) service &optional (framed nil))
+  (:method ((location puri:uri) service
+            &key framed (multiplexed (listp service)) &allow-other-keys)
     "Given a basic thrift uri, open a binary socket server and listen on the port."
     (let ((server (make-instance 'socket-server
                                  :socket (usocket:socket-listen (puri:uri-host location)
@@ -168,10 +169,13 @@
                                                                 :element-type 'unsigned-byte
                                                                 :reuseaddress t)
                                  :services (alexandria:ensure-list service))))
-      (unwind-protect (serve server (server-services server) framed)
+      (unwind-protect (serve server
+                             (server-services server)
+                             :framed framed
+                             :multiplexed multiplexed)
         (server-close server))))
 
-  (:method ((s socket-server) (services list) &optional (framed nil))
+  (:method ((s socket-server) (services list) &key framed multiplexed &allow-other-keys)
     (loop 
       (let ((connection (accept-connection s)))
         (if (open-stream-p (usocket:socket-stream connection))
@@ -181,6 +185,7 @@
               (setf input-transport (framed-transport input-transport))
               (setf output-transport (framed-transport output-transport)))
             (let ((protocol (server-protocol s input-transport output-transport)))
+              (setf (slot-value protocol 'multiplexed) multiplexed)
               (unwind-protect (block :process-loop
                                 (handler-bind ((end-of-file (lambda (eof)
                                                               (declare (ignore eof))
