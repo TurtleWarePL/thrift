@@ -371,7 +371,7 @@
            (stream-write-message-end ,gprot)
            ,(unless oneway-p
               `(multiple-value-bind (request-message-identifier type sequence)
-                                    (stream-read-message-begin ,gprot)
+                   (stream-read-message-begin ,gprot)
                  (unless (eql sequence (protocol-sequence-number ,gprot))
                    (invalid-sequence-number ,gprot sequence (protocol-sequence-number ,gprot)))
                  (unless (equal ,identifier request-message-identifier)
