@@ -491,7 +491,7 @@
           (def-struct ,reply-struct-identifier
               (,@(unless (eq return-type 'void) `(("success" nil :id 0 :type ,return-type)))
                  ,@exceptions)))
-        (shadow ',implementation-function-name (symbol-package ',implementation-function-name))
+        (shadow 'implementation-function-name (symbol-package ',implementation-function-name))
         (export ',request-function-name (symbol-package ',request-function-name))
         (export ',response-function-name (symbol-package ',response-function-name))
         (def-request-method ,request-function-name (,parameter-list ,return-type)
