@@ -200,7 +200,10 @@
    (field-id-mode :initarg :field-key :reader protocol-field-id-mode
                   :type (member :identifier-number :identifier-name))
    (struct-id-mode :initarg :struct-id-mode :reader protocol-struct-id-mode
-                   :type (member :identifier-name :none))))
+                   :type (member :identifier-name :none))
+   (multiplexed
+    :initform nil :initarg :multiplexed :reader protocol-multiplexed-p
+    :documentation "Multiplexed protocol specifies service for each method.")))
 
 
 (defclass encoded-protocol (protocol)
