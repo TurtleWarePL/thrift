@@ -104,16 +104,22 @@
 (defgeneric method-definition (service identifier)
   (:method ((service (eql nil)) identifier))
   (:method ((services list) (identifier string))
-    (alexandria:if-let ((pos (position #\: identifier)))
-      (method-definition (find (subseq identifier 0 pos)
-                               services
-                               :test #'string=
-                               :key #'service-identifier)
-                         (subseq identifier (1+ pos)))
-      (dolist (base-service services)
-        (multiple-value-bind (fun service)
-            (method-definition base-service identifier)
-          (when fun (return-from method-definition (values fun service)))))))
+    (alexandria:when-let* ((pos (position #\: identifier))
+                           (service-identifier (subseq identifier 0 pos))
+                           (method-identifier (subseq identifier (1+ pos))))
+      (alexandria:if-let ((service (find service-identifier
+                                         services
+                                         :test #'string=
+                                         :key #'service-identifier)))
+        (return-from method-definition (method-definition service method-identifier))
+        (dolist (service services)
+          (multiple-value-bind (fun service)
+              (method-definition (service-base-services service) identifier)
+            (when fun (return-from method-definition (values fun service)))))))
+    (dolist (base-service services)
+      (multiple-value-bind (fun service)
+          (method-definition base-service identifier)
+        (when fun (return-from method-definition (values fun service))))))
   (:method ((service service) (identifier string))
     (let ((fun (gethash identifier (service-methods service))))
       (if fun
