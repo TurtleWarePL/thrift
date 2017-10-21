@@ -493,19 +493,25 @@
       (rest method-declaration)
     (let* ((call-struct-identifier (str method-identifier "_args"))
            (reply-struct-identifier (str method-identifier "_result"))
-           (implementation-function-name (implementation-str-sym method-identifier))
-           (request-function-name (str-sym method-identifier))
-           (response-function-name (response-str-sym method-identifier)))
+           ;; all the following symbols are uninterned, hence not `eq'.
+           (request-function-symbol (cons-symbol nil method-identifier))
+           (response-function-symbol (cons-symbol nil method-identifier))
+           (implementation-function-symbol (cons-symbol nil method-identifier)))
       `((eval-when (:compile-toplevel :load-toplevel :execute)
           (def-struct ,call-struct-identifier
               ,(mapcar #'parm-to-field-decl parameter-list))
           (def-struct ,reply-struct-identifier
               (,@(unless (eq return-type 'void) `(("success" nil :id 0 :type ,return-type)))
                  ,@exceptions)))
-        (shadow 'implementation-function-name (symbol-package ',implementation-function-name))
-        (export ',request-function-name (symbol-package ',request-function-name))
-        (export ',response-function-name (symbol-package ',response-function-name))
-        (def-request-method ,request-function-name (,parameter-list ,return-type)
+        ;; we put our untinterned symbols in their isolated packages
+        (mapc (lambda (s p) (import s p) (export s p))
+              '(,request-function-symbol
+                ,response-function-symbol
+                ,implementation-function-symbol)
+              (list (find-package (%pkg-name ',(str-sym service-identifier) ""))
+                    (find-package (%pkg-name ',(str-sym service-identifier) "-RESPONSE"))
+                    (find-package (%pkg-name ',(str-sym service-identifier) "-IMPLEMENTATION"))))
+        (def-request-method ,request-function-symbol (,parameter-list ,return-type)
           (:service-identifier ,service-identifier)
           (:method-identifier ,method-identifier)
           ,@(when documentation `((:documentation ,(string-trim *whitespace* documentation))))
@@ -513,12 +519,12 @@
           (:reply-struct ,reply-struct-identifier)
           ,@(when exceptions `((:exceptions ,@exceptions)))
           ,@(when oneway `((:oneway t))))
-        (def-response-method ,response-function-name (,parameter-list ,return-type)
+        (def-response-method ,response-function-symbol (,parameter-list ,return-type)
           (:service-identifier ,service-identifier)
           (:method-identifier ,method-identifier)
           (:call-struct ,call-struct-identifier)
           (:reply-struct ,reply-struct-identifier)
-          (:implementation-function ,implementation-function-name)
+          (:implementation-function ,implementation-function-symbol)
           ,@(when exceptions `((:exceptions ,@exceptions)))
           ,@(when oneway `((:oneway t))))))))
 
@@ -537,7 +543,6 @@
          (methods (remove :method options :test-not #'eq :key #'first))
          (documentation (second (assoc :documentation options)))
          (identifiers (mapcar #'second methods))
-         (response-names (mapcar #'response-str-sym identifiers))
          (initargs (loop for (key . rest) in options
                          unless (member key '(:service-class :method :documentation))
                          collect key
@@ -546,8 +551,10 @@
                                   collect `(,(str-sym identifier)
                                             ,(mapcar #'str-sym (mapcar #'first parameter-list))
                                             ,return-type))))
-
-    `(progn ,@(mapcan (alexandria:curry #'%generate-method identifier) methods)
+    `(progn (defpackage ,(%pkg-name name "") (:use))
+            (defpackage ,(%pkg-name name "-RESPONSE") (:use))
+            (defpackage ,(%pkg-name name "-IMPLEMENTATION") (:use))
+            ,@(mapcan (alexandria:curry #'%generate-method identifier) methods)
             ;; export the service name only
             (eval-when (:compile-toplevel :load-toplevel :execute)
               (export ',name))
@@ -557,7 +564,10 @@
               (make-instance ',class
                 :identifier ,identifier
                 :base-services (list ,@(mapcar #'str-sym (alexandria:ensure-list base-services)))
-                :methods ',(mapcar #'cons identifiers response-names)
+                :methods (mapcar (lambda (identifier)
+                                   (cons identifier
+                                         (response-str-sym ,identifier identifier)))
+                                 ',identifiers)
                 :documentation ,(format nil "~@[~a~%---~%~]~(~{~{~a~24t~a : ~a~}~^~%~}~)"
                                         documentation (sort method-interfaces #'string-lessp :key #'first))
                 ,@initargs)))))
