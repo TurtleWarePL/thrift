@@ -442,7 +442,6 @@
               (declaim (ftype (function (t t protocol)) ,name))
 	      (defun ,name (,service ,seq ,gprot)
 		,@(when documentation `(,documentation))
-                (declare (ignore ,service))
 		(let (,@(mapcar #'list parameter-names defaults)
                       (,identifier (if (protocol-multiplexed-p ,gprot)
                                        (concatenate 'string
