@@ -75,41 +75,42 @@
 
 
 (test protocol.stream-read/write-message
-  (let ((struct (make-instance 'test-struct :field1 "one" :field2 2))
+  (let ((struct (make-test-struct :field-one "one" :field-two 2))
         (stream (make-test-protocol)))
     (stream-write-message stream struct 'call)
-    (rewind stream) 
-    (multiple-value-bind (name type sequence response)
-                         (stream-read-message stream)
-      (and (equal name 'test-struct)
-           (eq type 'call)
-           (eql sequence 1)
-           (typep response 'test-struct)
-           (equal (test-struct-field1 response) "one")
-           (equal (test-struct-field2 response) 2)))))
+    (rewind stream)
+    (multiple-value-bind (name type sequence)
+        (stream-read-message-begin stream)
+      (let ((response (stream-read-struct stream 'test-struct)))
+        (and (string= name "TestStruct")
+             (eq type 'call)
+             (eql sequence 1)
+             (typep response 'test-struct)
+             (equal (test-struct-field-one response) "one")
+             (equal (test-struct-field-two response) 2))))))
 
 
 (test protocol.stream-read/write-struct
-  (let ((struct (make-instance 'test-struct :field1 "one" :field2 2))
+  (let ((struct (make-test-struct :field-one "one" :field-two 2))
         (stream (make-test-protocol)))
     (stream-write-struct stream struct)
     (rewind stream)
     (let* ((type 'test-struct)
            (result (stream-read-struct stream type)))
       (and (typep result 'test-struct)
-           (equal (test-struct-field1 result) "one")
-           (equal (test-struct-field2 result) 2)))))
+           (equal (test-struct-field-one result) "one")
+           (equal (test-struct-field-two result) 2)))))
 ;;; (run-tests "protocol.stream-read/write-struct")
 
 (test protocol.stream-read/write-struct.inline
-  (let ((struct (make-instance 'test-struct :field1 "one" :field2 2))
+  (let ((struct (make-test-struct :field-one "one" :field-two 2))
         (stream (make-test-protocol)))
     (stream-write-struct stream struct 'test-struct)
     (rewind stream)
     (let ((result (stream-read-struct stream 'test-struct)))
       (and (typep result 'test-struct)
-           (equal (test-struct-field1 result) "one")
-           (equal (test-struct-field2 result) 2)))))
+           (equal (test-struct-field-one result) "one")
+           (equal (test-struct-field-two result) 2)))))
 ;;; (run-tests "protocol.stream-read/write-struct.inline")
 
 
