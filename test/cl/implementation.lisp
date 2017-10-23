@@ -114,8 +114,8 @@
   (format t "testOneway(~a): done sleeping!~%" seconds))
 
 (defun thrift.test.second-service-implementation:blah-blah ()
-  )
+  (format t "blahBlah()~%"))
 
 (defun thrift.test.second-service-implementation:secondtest-string (thing)
-  (format t "testString(~a)~%" thing)
+  (format t "secondtestString(~a)~%" thing)
   thing)
