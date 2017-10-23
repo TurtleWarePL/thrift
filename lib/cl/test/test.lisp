@@ -88,19 +88,9 @@
 #+digitool
 (setf (ccl:assq 'test ccl:*fred-special-indent-alist*) 1)
 
-
-
-;;;
-;;;
-
-(defclass test-struct (thrift-object)
-  ((field1 :type string :initarg :field1 :accessor test-struct-field1
-           :identifier-number 1 :identifier "fieldOne")
-   (field2 :type i16 :initarg :field2 :accessor test-struct-field2
-           :identifier-number 2 :identifier "fieldTwo"))
-  (:metaclass thrift-struct-class)
-  (:identifier "TestStruct")
-  (:documentation "a simple srtuct class for tests"))
+(def-struct "TestStruct"
+    (("fieldOne" nil :id 1 :type string)
+     ("fieldTwo" nil :id 2 :type i16)))
 
 (defclass test-large-struct (thrift-object)
   ((field1 :type i16 :initarg :field1 :accessor test-struct-field1
