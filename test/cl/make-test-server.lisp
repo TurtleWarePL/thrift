@@ -25,11 +25,11 @@
             :default-value "simple"
             :argument-name "ARG")
     (stropt :long-name "transport"
-            :description "Transport: transport to use, one of: \"buffered\", \"framed\""
+            :description "Transport: transport to use (\"buffered\" or \"framed\")"
             :default-value "buffered"
             :argument-name "ARG")
     (stropt :long-name "protocol"
-            :description "Protocol: currently only \"binary\""
+            :description "Protocol: protocol to use (\"binary\" or \"multi\")"
             :default-value "binary"
             :argument-name "ARG")))
 
@@ -40,7 +40,8 @@
     (clon:help)
     (clon:exit))
   (let ((port "9090")
-        (framed nil))
+        (framed nil)
+        (multiplexed nil))
     (clon:do-cmdline-options (option name value source)
       (print (list option name value source))
       (if (string= name "port")
@@ -48,13 +49,21 @@
       (if (string= name "transport")
           (cond ((string= value "buffered") (setf framed nil))
                 ((string= value "framed") (setf framed t))
-                (t (error "Unsupported transport.")))))
+                (t (error "Unsupported transport."))))
+      (if (string= name "protocol")
+          (cond ((string= value "binary") (setf multiplexed nil))
+                ((string= value "multi") (setf multiplexed t))
+                (t (error "Unsupported protocol.")))))
     (terpri)
-    (thrift:serve (puri:parse-uri (concatenate 'string
-                                               "thrift://127.0.0.1:"
-                                               port))
-                  thrift.test:thrift-test
-                  :framed framed))
+    (let ((services (if multiplexed
+                        (list thrift.test:thrift-test thrift.test:second-service)
+                        thrift.test:thrift-test)))
+      (thrift:serve (puri:parse-uri (concatenate 'string
+                                                 "thrift://127.0.0.1:"
+                                                 port))
+                    services
+                    :framed framed
+                    :multiplexed multiplexed)))
   (clon:exit))
 
 (clon:dump "TestServer" main)
