@@ -13,20 +13,30 @@
 (defparameter *test_unknown* 64)
 (defparameter *test_timeout* 128)
 
-(defun cross-test ()
+(defun cross-test (&key (multiplexed nil))
   "The main cross-test runner."
-  (let ((result 0))
+  (let ((result nil))
     (handler-case (progn (unless (run-package-tests :package :base-types)
-			   (incf result *test_basetypes*))
+			   (pushnew *test_basetypes* result))
 			 (unless (run-package-tests :package :structs)
-			   (incf result *test_structs*))
+			   (pushnew *test_structs* result))
 			 (unless (run-package-tests :package :containers)
-			   (incf result *test_containers*))
+			   (pushnew *test_containers* result))
 			 (unless (run-package-tests :package :exceptions)
-			   (incf result *test_exceptions*))
-			 (run-package-tests :package :misc))
-      (error (e) (incf result *test_unknown*)))
-    result))
+			   (pushnew *test_exceptions* result))
+			 (unless (run-package-tests :package :misc)
+                           (pushnew *test_unknown* result))
+                         
+                         ;; It doesn't seem like anyone actually uses
+                         ;; the second test service when testing multiplexing,
+                         ;; so this would fail against servers in other
+                         ;; languages. For now, anyway.
+                         #+(or)
+                         (when multiplexed
+                           (unless (run-package-tests :package :multiplex)
+                             (pushnew *test_unknown* result))))
+      (error (e) (pushnew *test_unknown* result)))
+    (apply #'+ result)))
 
 (fiasco:define-test-package :base-types)
 
@@ -205,3 +215,11 @@
 
 (deftest oneway-test ()
   (is (null (thrift.test.thrift-test:test-oneway thrift-cross::*prot* 1))))
+
+(fiasco:define-test-package :multiplex)
+
+(in-package :multiplex)
+
+(deftest multiplex-test ()
+  (finishes (thrift.test.second-service:blah-blah thrift-cross::*prot*))
+  (is (string= "asd" (thrift.test.second-service:secondtest-string thrift-cross::*prot* "asd"))))
