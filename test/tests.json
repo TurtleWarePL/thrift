@@ -650,7 +650,7 @@
     "client": {
       "command": ["TestClient"],
       "workdir": "cl",
-        "protocols": ["binary"],
+      "protocols": ["binary", "multi"],
       "transports": ["buffered", "framed"],
       "sockets": ["ip"]
     }

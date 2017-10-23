@@ -13,7 +13,7 @@
 (defparameter *test_unknown* 64)
 (defparameter *test_timeout* 128)
 
-(defun cross-test ()
+(defun cross-test (&key (multiplexed nil))
   "The main cross-test runner."
   (let ((result 0))
     (handler-case (progn (unless (run-package-tests :package :base-types)
@@ -24,7 +24,9 @@
 			   (incf result *test_containers*))
 			 (unless (run-package-tests :package :exceptions)
 			   (incf result *test_exceptions*))
-			 (run-package-tests :package :misc))
+			 (run-package-tests :package :misc)
+                         (when multiplexed
+                           (run-package-tests :package :multiplex)))
       (error (e) (incf result *test_unknown*)))
     result))
 
@@ -205,3 +207,11 @@
 
 (deftest oneway-test ()
   (is (null (thrift.test.thrift-test:test-oneway thrift-cross::*prot* 1))))
+
+(fiasco:define-test-package :multiplex)
+
+(in-package :multiplex)
+
+(deftest multiplex-test ()
+  (finishes (thrift.test.second-service:blah-blah thrift-cross::*prot*))
+  (is (string= "asd" (thrift.test.second-service:secondtest-string thrift-cross::*prot* "asd"))))

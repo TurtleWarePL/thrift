@@ -35,11 +35,11 @@
 	    :argument-name "ARG"
 	    :argument-type :optional)
     (stropt :long-name "transport"
-	    :description "Transport: transport to use; one of: \"buffered\", \"framed\""
+	    :description "Transport: transport to use (\"buffered\", \"framed\")"
 	    :default-value "buffered"
 	    :argument-name "ARG")
     (stropt :long-name "protocol"
-	    :description "Protocol: currently only \"binary\""
+	    :description "Protocol: protocol to use (\"binary\", \"multi\")"
 	    :default-value "binary"
 	    :argument-name "ARG")))
 
@@ -51,7 +51,8 @@
     (clon:exit))
   (let ((port "9090")
 	(host "localhost")
-        (framed nil))
+        (framed nil)
+        (multiplexed nil))
     (clon:do-cmdline-options (option name value source)
       (print (list option name value source))
       (if (string= name "host")
@@ -61,12 +62,17 @@
       (if (string= name "transport")
           (cond ((string= value "buffered") (setf framed nil))
                 ((string= value "framed") (setf framed t))
-                (t (error "Unsupported transport.")))))
+                (t (error "Unsupported transport."))))
+      (if (string= name "protocol")
+          (cond ((string= value "binary") (setf multiplexed nil))
+                ((string= value "multi") (setf multiplexed t))
+                (t (error "Unsupported protocol.")))))
     (terpri)
     (setf *prot* (thrift.implementation::client (puri:parse-uri
                                                  (concatenate 'string "thrift://" host ":" port))
-                                                :framed framed))
-    (let ((result (cross-test)))
+                                                :framed framed
+                                                :multiplexed multiplexed))
+    (let ((result (cross-test :multiplexed multiplexed)))
       (thrift.implementation::close *prot*)
       (clon:exit result))))
 
