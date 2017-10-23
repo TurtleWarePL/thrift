@@ -102,14 +102,32 @@
     (format stream "~@[~a~]" (service-identifier object))))
 
 (defgeneric method-definition (service identifier)
+  (:method ((service (eql nil)) identifier))
+  (:method ((services list) (identifier string))
+    (alexandria:when-let* ((pos (position #\: identifier))
+                           (service-identifier (subseq identifier 0 pos))
+                           (method-identifier (subseq identifier (1+ pos))))
+      (alexandria:if-let ((service (find service-identifier
+                                         services
+                                         :test #'string=
+                                         :key #'service-identifier)))
+        (return-from method-definition (method-definition service method-identifier))
+        (dolist (service services)
+          (multiple-value-bind (fun service)
+              (method-definition (service-base-services service) identifier)
+            (when fun (return-from method-definition (values fun service)))))))
+    (dolist (base-service services)
+      (multiple-value-bind (fun service)
+          (method-definition base-service identifier)
+        (when fun (return-from method-definition (values fun service))))))
   (:method ((service service) (identifier string))
     (let ((fun (gethash identifier (service-methods service))))
       (if fun
-        (values fun service)
-        (dolist (base-service (service-base-services service))
-          (multiple-value-bind (fun service)
-                               (method-definition base-service identifier)
-            (when fun (return-from method-definition (values fun service)))))))))
+          (values fun service)
+          (dolist (base-service (service-base-services service))
+            (multiple-value-bind (fun service)
+                (method-definition base-service identifier)
+              (when fun (return-from method-definition (values fun service)))))))))
 
 (defgeneric (setf method-definition) (function service identifier)
   (:method ((function function) (service service) (identifier string))
@@ -144,20 +162,26 @@
 
 (defparameter *debug-server* t)
 
-(defgeneric serve (connection-server service &optional framed)
+(defgeneric serve (connection-server service &key &allow-other-keys)
   (:documentation "Accept to a CONNECTION-SERVER, configure the CLIENT's transport and protocol
  in combination with the connection, and process messages until the connection closes.")
 
-  (:method ((location puri:uri) service &optional (framed nil))
+  (:method ((location puri:uri) service
+            &key framed (multiplexed (listp service)) &allow-other-keys)
     "Given a basic thrift uri, open a binary socket server and listen on the port."
     (let ((server (make-instance 'socket-server
-                    :socket (usocket:socket-listen (puri:uri-host location) (puri:uri-port location)
-                                                   :element-type 'unsigned-byte
-                                                   :reuseaddress t))))
-      (unwind-protect (serve server service framed)
+                                 :socket (usocket:socket-listen (puri:uri-host location)
+                                                                (puri:uri-port location)
+                                                                :element-type 'unsigned-byte
+                                                                :reuseaddress t)
+                                 :services (alexandria:ensure-list service))))
+      (unwind-protect (serve server
+                             (server-services server)
+                             :framed framed
+                             :multiplexed multiplexed)
         (server-close server))))
 
-  (:method ((s socket-server) (service service) &optional (framed nil))
+  (:method ((s socket-server) (services list) &key framed multiplexed &allow-other-keys)
     (loop 
       (let ((connection (accept-connection s)))
         (if (open-stream-p (usocket:socket-stream connection))
@@ -167,6 +191,7 @@
               (setf input-transport (framed-transport input-transport))
               (setf output-transport (framed-transport output-transport)))
             (let ((protocol (server-protocol s input-transport output-transport)))
+              (setf (slot-value protocol 'multiplexed) multiplexed)
               (unwind-protect (block :process-loop
                                 (handler-bind ((end-of-file (lambda (eof)
                                                               (declare (ignore eof))
@@ -177,8 +202,8 @@
                                                             (warn "Server error: ~s: ~a" s error))
                                                         (stream-write-exception protocol error)
                                                         (return-from :process-loop))))
-                                  (loop (unless (open-stream-p input-transport) (return))
-                                     (process service protocol))))
+                                  (loop while (open-stream-p input-transport)
+                                     do (process services protocol))))
               (close input-transport)
               (close output-transport))))   
           ;; listening socket closed
@@ -191,17 +216,16 @@
  function and the arguments, invokes the method, and replies with the results.
  The protocols are initially those of the peer itself, but they are passed her in order to permit
  wrapping for logging, etc.")
-
-  (:method ((service service) (protocol t))
+  (:method ((services list) (protocol protocol))
     (flet ((consume-message ()
              (prog1 (stream-read-struct protocol)
                (stream-read-message-end protocol))))
       (multiple-value-bind (request-identifier type sequence-number)
-                           (stream-read-message-begin protocol)
+          (stream-read-message-begin protocol)
         (ecase type
           ((call oneway)
            (multiple-value-bind (request-method service)
-                                (method-definition service request-identifier)
+               (method-definition services request-identifier)
              (cond (request-method
                     (let ((*package* (service-package service)))
                       (funcall request-method service sequence-number protocol)))

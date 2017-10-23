@@ -31,15 +31,12 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)          ; for batch compilation
 
-  (defun implementation-package ()
-    (let ((package (concatenate 'string (package-name *package*) (string :-implementation))))
-      (or (find-package package)
-          (make-package package :use nil))))
-  
-  (defun response-package ()
-    (let ((package (concatenate 'string (package-name *package*) (string :-response))))
-      (or (find-package package)
-          (make-package package :use nil))))
+
+  (defun %pkg-name (service suffix)
+    (alexandria:symbolicate (package-name *package*) #\. service suffix))
+
+  (defun response-package (service-name)
+    (find-package (%pkg-name service-name "-RESPONSE")))
 
   (defun canonicalize-name (string)
     "Replace a camel-case pattern with lower case and '-' separation."
@@ -120,18 +117,12 @@
   
   ;;; (assert (equal (list (str-sym "keyword:a") (str-sym "keyword:" "a") (str-sym "a" "sdf")) '(:a :a thrift-generated::asdf)))
   
-  (defun implementation-str-sym (&rest identifiers)
-    (let* ((*package* (implementation-package))
-           (sym (apply #'str-sym identifiers)))
+  (defun response-str-sym (service-identifier method-identifier)
+    (let* ((*package* (response-package (str-sym service-identifier)))
+           (sym (str-sym method-identifier)))
       (export sym *package*)
       sym))
 
-  (defun response-str-sym (&rest identifiers)
-    (let* ((*package* (response-package))
-           (sym (apply #'str-sym identifiers)))
-      (export sym *package*)
-      sym))
-  
   (defmacro with-gensyms (syms &body b)
     `(let ,(mapcar #'(lambda (s) `(,s (gensym ,(string s)))) syms)
        ,@b))

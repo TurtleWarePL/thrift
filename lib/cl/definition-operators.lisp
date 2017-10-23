@@ -346,7 +346,8 @@
  the request/reply process, and the result decoding. Return the result value or signal an
  exception as per the response."
 
-  (let* ((identifier (or (second (assoc :identifier options)) (string name)))
+  (let* ((service-identifier (second (assoc :service-identifier options)))
+         (method-identifier (or (second (assoc :method-identifier options)) (string name)))
          (documentation (second (assoc :documentation options)))
          (exceptions (rest (assoc :exceptions options)))
          (exception-names (mapcar #'str-sym (mapcar #'car exceptions)))
@@ -354,16 +355,24 @@
          (parameter-names (mapcar #'(lambda (a) (str-sym (first a))) parameter-list))
          (parameter-ids (mapcar #'third parameter-list))
          (type-names (mapcar #'(lambda (a) (type-name-class (second a))) parameter-list))
-         (call-struct (or (second (assoc :call-struct options)) (str identifier "_args")))
-         (reply-struct (or (second (assoc :reply-struct-type options)) (str identifier "_result")))
+         (call-struct (or (second (assoc :call-struct options))
+                          (str method-identifier "_args")))
+         (reply-struct (or (second (assoc :reply-struct-type options))
+                           (str method-identifier "_result")))
          (success (str-sym "success")))
     
-    (with-gensyms (gprot extra-initargs)
+    (with-gensyms (gprot request-identifier extra-initargs)
       `(progn
          (declaim (ftype (function (protocol ,@type-names)) ,name))
-         (defun ,name (,gprot ,@parameter-names)
+         (defun ,name (,gprot ,@parameter-names
+                       &aux (,request-identifier (if (protocol-multiplexed-p ,gprot)
+                                             (concatenate 'string
+                                                          ,service-identifier
+                                                          ":"
+                                                          ,method-identifier)
+                                             ,method-identifier)))
            ,@(when documentation `(,documentation))
-           (stream-write-message-begin ,gprot ,identifier 'call
+           (stream-write-message-begin ,gprot ,request-identifier 'call
                                        (protocol-next-sequence-number ,gprot))
            ;; use the respective args structure as a template to generate the message
            (stream-write-struct ,gprot (thrift:list ,@(mapcar #'(lambda (id name) `(cons ,id ,name)) parameter-ids parameter-names))
@@ -371,11 +380,12 @@
            (stream-write-message-end ,gprot)
            ,(unless oneway-p
               `(multiple-value-bind (request-message-identifier type sequence)
-                                    (stream-read-message-begin ,gprot)
+                   (stream-read-message-begin ,gprot)
                  (unless (eql sequence (protocol-sequence-number ,gprot))
                    (invalid-sequence-number ,gprot sequence (protocol-sequence-number ,gprot)))
-                 (unless (equal ,identifier request-message-identifier)
-                   (warn "response does not match request: ~s, ~s." ,identifier request-message-identifier))
+                 (unless (equal ,request-identifier request-message-identifier)
+                   (warn "response does not match request: ~s, ~s."
+                         ,request-identifier request-message-identifier))
                  (ecase type
                    (reply
                     (let (,@(unless (eq return-type 'void) `((,success nil)))
@@ -409,11 +419,10 @@
   "Generate a response function definition.
  The method is defined with three arguments, a service, a sequence number and a protocol.
  The default method decodes the declared argument struct, invokes the base operator and, depending
- on the return type, encodes a response message. The given sequence number is reused in the response.
- The service argument is available for specialization, but otherwise ignored."
+ on the return type, encodes a response message. The given sequence number is reused in the response."
   
-  (with-gensyms (service seq gprot extra-args)
-    (let* ((identifier (or (second (assoc :identifier options)) (string name)))
+  (with-gensyms (service response-identifier seq gprot extra-args)
+    (let* ((method-identifier (or (second (assoc :method-identifier options)) (string name)))
            (documentation (second (assoc :documentation options)))
            (oneway-p (second (assoc :oneway options)))
            (implementation (or (second (assoc :implementation-function options))
@@ -421,8 +430,10 @@
            (parameter-names (mapcar #'(lambda (a) (str-sym (first a))) parameter-list))
 	   (parameter-count (length parameter-list))
            (defaults (mapcar #'(lambda (a) (fourth a)) parameter-list))
-           (call-struct (or (second (assoc :call-struct options)) (str identifier "_args")))
-           (reply-struct (or (second (assoc :reply-struct options)) (str identifier "_result")))
+           (call-struct (or (second (assoc :call-struct options))
+                            (str method-identifier "_args")))
+           (reply-struct (or (second (assoc :reply-struct options))
+                             (str method-identifier "_result")))
            (exceptions (rest (assoc :exceptions options)))
            (application-form `(if ,extra-args
 				  (apply #',implementation ,@parameter-names ,extra-args)
@@ -431,9 +442,15 @@
               (declaim (ftype (function (t t protocol)) ,name))
 	      (defun ,name (,service ,seq ,gprot)
 		,@(when documentation `(,documentation))
-                (declare (ignore ,service))
 		(let (,@(mapcar #'list parameter-names defaults)
-		      (,extra-args nil))
+                      (,response-identifier (if (protocol-multiplexed-p ,gprot)
+                                                (concatenate 'string
+                                                             (service-identifier ,service)
+                                                             ":"
+                                                             ,method-identifier)
+                                                ,method-identifier))
+                        (,extra-args nil))
+                  (declare (ignorable ,response-identifier))
 		  ,(generate-struct-decoder gprot `(find-thrift-class ',(str-sym call-struct))
 					    (mapcar #'parm-to-field-decl parameter-list) extra-args)
 		  ,(let ((expression
@@ -442,12 +459,12 @@
 				((eq return-type 'void)
 				 `(prog1
                                       ,application-form
-				    (stream-write-message-begin ,gprot ,identifier 'reply ,seq)
+				    (stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
 				    (stream-write-struct ,gprot (thrift:list) ',(str-sym reply-struct))
 				    (stream-write-message-end ,gprot)))
 				(t
 				 `(let ((result ,application-form))
-				    (stream-write-message-begin ,gprot ,identifier 'reply ,seq)
+				    (stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
 				    (stream-write-struct ,gprot (thrift:list (cons 0 result)) ',(str-sym reply-struct))
 				    (stream-write-message-end ,gprot)
 				    result)))))
@@ -461,7 +478,7 @@
 					     `(,(str-sym external-exception-type) (condition)
 						;; sent as a reply in order to effect operation-specific exception
 						;; processing.
-						(stream-write-message-begin ,gprot ,identifier 'reply ,seq)
+						(stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
 						(stream-write-struct ,gprot (thrift:list (cons ,id condition))
 								     ',(str-sym reply-struct))
 						(stream-write-message-end ,gprot)
@@ -469,36 +486,45 @@
                          expression))))))))
 
 
-(defun %generate-method (method-declaration)
-  (destructuring-bind (identifier (parameter-list return-type) &key (oneway nil) (exceptions nil)
-                                  (implementation-function-name (implementation-str-sym identifier))
-                                  documentation)
+(defun %generate-method (service-identifier method-declaration)
+  (destructuring-bind (method-identifier
+                       (parameter-list return-type)
+                       &key (oneway nil) (exceptions nil) documentation)
       (rest method-declaration)
-    (let* ((call-struct-identifier (str identifier "_args"))
-           (reply-struct-identifier (str identifier "_result"))
-           (request-function-name (str-sym identifier))
-           (response-function-name (response-str-sym identifier)))
+    (let* ((call-struct-identifier (str method-identifier "_args"))
+           (reply-struct-identifier (str method-identifier "_result"))
+           ;; all the following symbols are uninterned, hence not `eq'.
+           (request-function-symbol (cons-symbol nil method-identifier))
+           (response-function-symbol (cons-symbol nil method-identifier))
+           (implementation-function-symbol (cons-symbol nil method-identifier)))
       `((eval-when (:compile-toplevel :load-toplevel :execute)
           (def-struct ,call-struct-identifier
               ,(mapcar #'parm-to-field-decl parameter-list))
           (def-struct ,reply-struct-identifier
               (,@(unless (eq return-type 'void) `(("success" nil :id 0 :type ,return-type)))
                  ,@exceptions)))
-        (shadow 'implementation-function-name (symbol-package ',implementation-function-name))
-        (export ',request-function-name (symbol-package ',request-function-name))
-        (export ',response-function-name (symbol-package ',response-function-name))
-        (def-request-method ,request-function-name (,parameter-list ,return-type)
-          (:identifier ,identifier)
+        ;; we put our untinterned symbols in their isolated packages
+        (mapc (lambda (s p) (import s p) (export s p))
+              '(,request-function-symbol
+                ,response-function-symbol
+                ,implementation-function-symbol)
+              (list (find-package (%pkg-name ',(str-sym service-identifier) ""))
+                    (find-package (%pkg-name ',(str-sym service-identifier) "-RESPONSE"))
+                    (find-package (%pkg-name ',(str-sym service-identifier) "-IMPLEMENTATION"))))
+        (def-request-method ,request-function-symbol (,parameter-list ,return-type)
+          (:service-identifier ,service-identifier)
+          (:method-identifier ,method-identifier)
           ,@(when documentation `((:documentation ,(string-trim *whitespace* documentation))))
           (:call-struct ,call-struct-identifier)
           (:reply-struct ,reply-struct-identifier)
           ,@(when exceptions `((:exceptions ,@exceptions)))
           ,@(when oneway `((:oneway t))))
-        (def-response-method ,response-function-name (,parameter-list ,return-type)
-          (:identifier ,identifier)
+        (def-response-method ,response-function-symbol (,parameter-list ,return-type)
+          (:service-identifier ,service-identifier)
+          (:method-identifier ,method-identifier)
           (:call-struct ,call-struct-identifier)
           (:reply-struct ,reply-struct-identifier)
-          (:implementation-function ,implementation-function-name)
+          (:implementation-function ,implementation-function-symbol)
           ,@(when exceptions `((:exceptions ,@exceptions)))
           ,@(when oneway `((:oneway t))))))))
 
@@ -517,7 +543,6 @@
          (methods (remove :method options :test-not #'eq :key #'first))
          (documentation (second (assoc :documentation options)))
          (identifiers (mapcar #'second methods))
-         (response-names (mapcar #'response-str-sym identifiers))
          (initargs (loop for (key . rest) in options
                          unless (member key '(:service-class :method :documentation))
                          collect key
@@ -526,8 +551,10 @@
                                   collect `(,(str-sym identifier)
                                             ,(mapcar #'str-sym (mapcar #'first parameter-list))
                                             ,return-type))))
-
-    `(progn ,@(mapcan #'%generate-method methods)
+    `(progn (defpackage ,(%pkg-name name "") (:use))
+            (defpackage ,(%pkg-name name "-RESPONSE") (:use))
+            (defpackage ,(%pkg-name name "-IMPLEMENTATION") (:use))
+            ,@(mapcan (alexandria:curry #'%generate-method identifier) methods)
             ;; export the service name only
             (eval-when (:compile-toplevel :load-toplevel :execute)
               (export ',name))
@@ -537,7 +564,10 @@
               (make-instance ',class
                 :identifier ,identifier
                 :base-services (list ,@(mapcar #'str-sym (alexandria:ensure-list base-services)))
-                :methods ',(mapcar #'cons identifiers response-names)
+                :methods (mapcar (lambda (identifier)
+                                   (cons identifier
+                                         (response-str-sym ,identifier identifier)))
+                                 ',identifiers)
                 :documentation ,(format nil "~@[~a~%---~%~]~(~{~{~a~24t~a : ~a~}~^~%~}~)"
                                         documentation (sort method-interfaces #'string-lessp :key #'first))
                 ,@initargs)))))
