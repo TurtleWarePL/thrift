@@ -644,14 +644,14 @@
     "server": {
       "command": ["TestServer"],
       "workdir": "cl",
-      "protocols": ["binary"],
+      "protocols": ["binary", "multi"],
       "transports": ["buffered", "framed"],
       "sockets": ["ip"]
     },
     "client": {
       "command": ["TestClient"],
       "workdir": "cl",
-      "protocols": ["binary"],
+        "protocols": ["binary"],
       "transports": ["buffered", "framed"],
       "sockets": ["ip"]
     }
