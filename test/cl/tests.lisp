@@ -26,6 +26,12 @@
 			   (pushnew *test_exceptions* result))
 			 (unless (run-package-tests :package :misc)
                            (pushnew *test_unknown* result))
+                         
+                         ;; It doesn't seem like anyone actually uses
+                         ;; the second test service when testing multiplexing,
+                         ;; so this would fail against servers in other
+                         ;; languages. For now, anyway.
+                         #+(or)
                          (when multiplexed
                            (unless (run-package-tests :package :multiplex)
                              (pushnew *test_unknown* result))))
