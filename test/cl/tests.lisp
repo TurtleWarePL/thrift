@@ -15,20 +15,22 @@
 
 (defun cross-test (&key (multiplexed nil))
   "The main cross-test runner."
-  (let ((result 0))
+  (let ((result nil))
     (handler-case (progn (unless (run-package-tests :package :base-types)
-			   (incf result *test_basetypes*))
+			   (pushnew *test_basetypes* result))
 			 (unless (run-package-tests :package :structs)
-			   (incf result *test_structs*))
+			   (pushnew *test_structs* result))
 			 (unless (run-package-tests :package :containers)
-			   (incf result *test_containers*))
+			   (pushnew *test_containers* result))
 			 (unless (run-package-tests :package :exceptions)
-			   (incf result *test_exceptions*))
-			 (run-package-tests :package :misc)
+			   (pushnew *test_exceptions* result))
+			 (unless (run-package-tests :package :misc)
+                           (pushnew *test_unknown* result))
                          (when multiplexed
-                           (run-package-tests :package :multiplex)))
-      (error (e) (incf result *test_unknown*)))
-    result))
+                           (unless (run-package-tests :package :multiplex)
+                             (pushnew *test_unknown* result))))
+      (error (e) (pushnew *test_unknown* result)))
+    (apply #'+ result)))
 
 (fiasco:define-test-package :base-types)
 
