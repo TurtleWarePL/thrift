@@ -1,10 +1,13 @@
-(in-package :thrift-test)
+(fiasco:define-test-package (#:definition-operator-tests :in thrift-test:thrift-self-tests)
+  (:use #:thrift-test-utils))
+
+(in-package #:definition-operator-tests)
 
 ;;; tests for definition operators
 ;;; (run-tests "def-.*")
 
-(test def-package.1
-  (progn (def-package :test-package)
+(deftest define-package ()
+  (progn (thrift:def-package :test-package)
          (prog1 (and (find-package :test-package)
                      (find-package :test-package-implementation)
                      (find-package :test-package-response))
@@ -12,10 +15,10 @@
            (delete-package :test-package-implementation)
            (delete-package :test-package-response))))
 
-(test def-package.2
+(deftest redefine-package ()
   ;; redfinition should succeed
-  (progn (def-package :test-package)
-         (def-package :test-package)
+  (progn (thrift:def-package :test-package)
+         (thrift:def-package :test-package)
          (prog1 (and (find-package :test-package)
                      (find-package :test-package-implementation)
                      (find-package :test-package-response))
@@ -24,14 +27,14 @@
            (delete-package :test-package-response))))
 ;;; (run-tests "def-package.*")
 
-(test def-enum
-  (progn (def-enum "TestEnum" ((first . 1) (second . 2)))
+(deftest define-enum ()
+  (progn (thrift:def-enum "TestEnum" ((first . 1) (second . 2)))
          (prog1 (and (eql (symbol-value 'test-enum.first) 1)
                      (eql (symbol-value 'test-enum.second) 2)))))
 ;;; (run-tests "def-enum")
 
-(test def-constant
-  (progn (def-constant "aConstant" 1)
+(deftest define-constant ()
+  (progn (thrift:def-constant "aConstant" 1)
          (prog1 (eql (symbol-value 'a-constant) 1)
            (unintern 'a-constant))))
 
@@ -41,10 +44,10 @@
 (defgeneric test-struct-too-field3 (struct))
 (defgeneric (setf test-struct-too-field2) (value struct))
 
-(test def-struct
+(deftest define-struct ()
   (progn
-    (def-struct "testStructToo" ())
-    (def-struct "testStructToo"
+    (thrift:def-struct "testStructToo" ())
+    (thrift:def-struct "testStructToo"
       (("field1" 0 :type i32 :id 1)
        ("field2" nil :type i16 :id 2 :optional t)
        ("field3" "string value" :type string :id 3)))
@@ -64,9 +67,9 @@
 
 (defgeneric test-exception-reason (exception))
 
-(def-exception "testException" (("reason" nil :type string :id 1)))
+(thrift:def-exception "testException" (("reason" nil :type string :id 1)))
 
-(test def-exception
+(deftest define-exception ()
   (progn
     (let ((ex (make-condition 'test-exception :reason "testing")))
       (prog1 (and (equal (test-exception-reason ex) "testing")

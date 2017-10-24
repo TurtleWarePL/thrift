@@ -1,9 +1,10 @@
-(fiasco:define-test-package (#:setup-tests :in thrift-test:thrift-self-tests))
+(fiasco:define-test-package (#:setup-tests :in thrift-test:thrift-self-tests)
+  (:use #:thrift-test-utils))
 
 (in-package #:setup-tests)
 
 (deftest thrift-class ()
-  (let ((class (find-class 'thrift-test::test-struct)))
+  (let ((class (find-class 'test-struct)))
     (is (equal (thrift:class-identifier class) "TestStruct"))
     (is (every #'(lambda (id name)
                    (equal (thrift:field-definition-identifier
@@ -14,7 +15,7 @@
                '("fieldOne" "fieldTwo")))))
 
 (deftest test-transport ()
-  (is (typep (thrift-test::make-test-transport) 'thrift:binary-transport)))
+  (is (typep (make-test-transport) 'thrift:binary-transport)))
 
 (deftest test-protocol ()
-  (is (typep (thrift-test::make-test-protocol) 'thrift:binary-protocol)))
+  (is (typep (make-test-protocol) 'thrift:binary-protocol)))
