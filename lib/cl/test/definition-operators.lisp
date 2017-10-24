@@ -64,9 +64,10 @@
 
 (defgeneric test-exception-reason (exception))
 
+(def-exception "testException" (("reason" nil :type string :id 1)))
+
 (test def-exception
   (progn
-    (eval '(def-exception "testException" (("reason" nil :type string :id 1))))
     (let ((ex (make-condition 'test-exception :reason "testing")))
       (prog1 (and (equal (test-exception-reason ex) "testing")
                   (eq (cl:type-of (nth-value 1 (ignore-errors (error ex))))
@@ -79,12 +80,13 @@
         (setf (find-class 'test-exception) nil)
         (setf (find-class 'test-exception-exception-class) nil)))))
 
+#+(or)
+(def-service "TestService" nil
+  (:method "someTestMethod" ((("arg1" i32 1) ("arg2" string 2)) string)))
 
-
+#+(or)
 (test def-service
-  (progn (defun thrift-test-implementation::test-method (arg1 arg2) (format nil "~a ~a" arg1 arg2))
-         (eval '(def-service "TestService" nil
-                  (:method "testMethod" ((("arg1" i32 1) ("arg2" string 2)) string))))
+  (progn (eval '(defun thrift-test.test-service-implementation:some-test-method (arg1 arg2) (format nil "~a ~a" arg1 arg2)))
          (let (request-protocol
                response-protocol
                (run-response-result nil))
@@ -94,22 +96,22 @@
                                          (stream-read-message-begin response-protocol)
                       (cond ((and (equal identifier "testMethod") (eq type 'call))
                              (setf run-response-result
-                                   (funcall 'thrift-test-response::test-method t seq response-protocol)))
+                                   (funcall 'thrift-test.test-service-response::test-method
+                                            t seq response-protocol)))
                             (t
                              (unknown-method response-protocol identifier seq
                                              (prog1 (stream-read-struct response-protocol)
                                                (stream-read-message-end response-protocol))))))))
-             
              (multiple-value-setq (request-protocol response-protocol)
                (make-test-protocol-peers :request-hook #'run-response))
              
-             (prog1 (and (equal (funcall 'thrift-test::test-method request-protocol 1 "testing")
+             (prog1 (and (equal (funcall 'thrift-test.test-service::test-method request-protocol 1 "testing")
                                 "1 testing")
                          ;; if the first test succeed, this should also be true
                          (equal run-response-result "1 testing"))
-               (fmakunbound 'thrift-test-implementation::test-method)
-               (fmakunbound 'thrift-test::test-method)
-               (fmakunbound 'thrift-test-response::test-method)
+               ;;(fmakunbound 'thrift-test.test-service-implementation::test-method)
+               ;;(fmakunbound 'thrift-test.test-service::test-method)
+               ;;(fmakunbound 'thrift-test.test-service-response::test-method)
                )))))
 ;;; (run-tests "def-service")
 
