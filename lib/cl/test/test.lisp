@@ -1,5 +1,7 @@
 (in-package :thrift-test)
 
+(fiasco:defsuite (thrift-self-tests :bind-to-package :thrift-test))
+
 ;;; (run-tests "setup/.*")
 ;;; (thrift-test::run-tests)
 ;;; (pprint-tabular t (sort (loop for key being each hash-key of *tests* collect (string key)) #'string-lessp))
