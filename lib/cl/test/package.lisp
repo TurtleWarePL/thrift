@@ -21,7 +21,8 @@
   #+sbcl
   (:export #:test
            #:with-test-services
-           #:*test-location*))
+           #:*test-location*
+           #:thrift-self-tests))
 
 (defpackage #:thrift-test-request (:use))
 
