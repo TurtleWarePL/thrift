@@ -1,9 +1,11 @@
-(in-package :common-lisp-user)
+(in-package #:common-lisp-user)
 
-(asdf:defsystem :thrift-test
-  :depends-on (:thrift
-               :bordeaux-threads
-	       :cl-ppcre)
+(asdf:defsystem #:thrift-test
+  :depends-on (#:thrift
+               #:bordeaux-threads
+	       #:cl-ppcre
+               #:fiasco)
+  :perform (asdf:test-op (o s) (uiop:symbol-call :fiasco :run-tests :thrift-test))
   :description "tests for com.apache.thrift"
   :serial t
   :components ((:file "package")
