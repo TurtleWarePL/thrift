@@ -1,16 +1,17 @@
-(in-package :thrift-test)
+(fiasco:define-test-package (#:vector-protocol-tests :in thrift-test:thrift-self-tests)
+  (:use #:thrift-test-utils))
 
-(test vector-protocol.write-byte
-  (progn
-    (stream-write-byte (make-instance 'vector-stream-transport) 1)
-    (stream-write-byte (make-instance 'vector-stream-transport) -1)))
+(in-package #:vector-protocol-tests)
 
+(deftest write-byte-test ()
+  (finishes (stream-write-byte (make-instance 'thrift:vector-stream-transport) 1))
+  (finishes (stream-write-byte (make-instance 'thrift:vector-stream-transport) -1)))
 
-(test vector-protocol.write-sequence
+(deftest write-sequence-test ()
   (let* ((data #(0 1 2 3 4 5 6 7 8 9 246 247 248 249 250 251 252 253 254 255))
          (buffer (make-array 2 :element-type thrift::*binary-transport-element-type*))
-         (outstream (make-instance 'vector-output-stream :vector buffer))
-         (instream (make-instance 'vector-input-stream :vector nil)))
+         (outstream (make-instance 'thrift:vector-output-stream :vector buffer))
+         (instream (make-instance 'thrift:vector-input-stream :vector nil)))
     (stream-write-sequence outstream data 0 nil)
     (cl:map nil #'(lambda (c) (stream-write-byte outstream (char-code c))) "asdf")
     (and (every #'eql
@@ -26,4 +27,3 @@
                 (equalp data2 data)
                 (stream-read-sequence instream data3 0 nil)
                 (equal (cl:map 'string #'code-char data3) "asdf"))))))
-
