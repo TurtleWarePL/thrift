@@ -383,7 +383,7 @@
                    (stream-read-message-begin ,gprot)
                  (unless (eql sequence (protocol-sequence-number ,gprot))
                    (invalid-sequence-number ,gprot sequence (protocol-sequence-number ,gprot)))
-                 (unless (equal ,request-identifier request-message-identifier)
+                 (unless (equal ,method-identifier request-message-identifier)
                    (warn "response does not match request: ~s, ~s."
                          ,request-identifier request-message-identifier))
                  (ecase type
@@ -443,12 +443,7 @@
 	      (defun ,name (,service ,seq ,gprot)
 		,@(when documentation `(,documentation))
 		(let (,@(mapcar #'list parameter-names defaults)
-                      (,response-identifier (if (protocol-multiplexed-p ,gprot)
-                                                (concatenate 'string
-                                                             (service-identifier ,service)
-                                                             ":"
-                                                             ,method-identifier)
-                                                ,method-identifier))
+                      (,response-identifier ,method-identifier)
                         (,extra-args nil))
                   (declare (ignorable ,response-identifier))
 		  ,(generate-struct-decoder gprot `(find-thrift-class ',(str-sym call-struct))
