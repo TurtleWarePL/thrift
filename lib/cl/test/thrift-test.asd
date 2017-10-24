@@ -10,6 +10,7 @@
   :serial t
   :components ((:file "package")
 	       (:file "test")
+               (:file "setup")
 	       (:file "vector-protocol")
                (:file "conditions")
                (:file "definition-operators")

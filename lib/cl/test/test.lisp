@@ -191,25 +191,3 @@
        ;; (test-server) doesn't work as the connect beats the accept and the client hangs
        (call-with-test-services #',op ,@services))))
 
-  
-
-;;;
-
-(test setup/thrift-class
-  (let ((class (find-class 'test-struct)))
-    (and (equal (class-identifier class) "TestStruct")
-         (every #'(lambda (id name)
-                    (equal (field-definition-identifier
-                            (find id (class-field-definitions class)
-                                  :key #'field-definition-identifier-number))
-                           name))
-                '(1 2)
-                '("fieldOne" "fieldTwo")))))
-
-(test setup/test-transport
-      (typep (make-test-transport) 'binary-transport))
-
-(test setup/test-protocol
-      (typep (make-test-protocol) 'binary-protocol))
-
-
