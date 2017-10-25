@@ -6,82 +6,118 @@
 (in-package #:condition-tests)
 
 (deftest thrift-error ()
-  (stringp (princ-to-string (make-condition 'thrift:thrift-error))))
+  (is (stringp (princ-to-string (make-condition 'thrift:thrift-error)))))
 
 
 (deftest application-error ()
-  (stringp (princ-to-string (make-condition 'thrift:application-error
-                                            :condition (nth-value 1 (ignore-errors (error "testing errors")))))))
+  (is (stringp
+       (princ-to-string
+        (make-condition 'thrift:application-error
+                        :condition (nth-value 1 (ignore-errors (error "testing errors"))))))))
 
 (deftest protocol-error ()
-      (stringp (princ-to-string (make-condition 'thrift:protocol-error
-                                                :protocol (make-test-protocol)))))
+  (is (stringp (princ-to-string (make-condition 'thrift:protocol-error
+                                                :protocol (make-test-protocol))))))
 
 (deftest transport-error ()
-  (stringp (princ-to-string (make-condition 'thrift:transport-error))))
+  (is (stringp (princ-to-string (make-condition 'thrift:transport-error)))))
 
 (deftest class-not-found-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:class-not-found-error
-                                                 :protocol (make-test-protocol)
-                                                 :identifier "UnknownClass")))
-       (typep (nth-value 1 (ignore-errors (thrift:class-not-found (make-test-protocol) "UnknownClass")))
-              'thrift:class-not-found-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:class-not-found-error
+                                                :protocol (make-test-protocol)
+                                                :identifier "UnknownClass"))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:class-not-found (make-test-protocol) "UnknownClass")))
+             'thrift:class-not-found-error)))
 
 (deftest protocol-version-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:protocol-version-error
-                                                 :protocol (make-test-protocol)
-                                                 :datum '(0 . 0) :expected-type '(1 . 1))))
-       (typep (nth-value 1 (ignore-errors (thrift:invalid-protocol-version (make-test-protocol) 0 0)))
-              'thrift:protocol-version-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:protocol-version-error
+                                                :protocol (make-test-protocol)
+                                                :datum '(0 . 0)
+                                                :expected-type '(1 . 1)))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:invalid-protocol-version (make-test-protocol) 0 0)))
+             'thrift:protocol-version-error)))
 
 (deftest element-type-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:element-type-error
-                                                 :protocol (make-test-protocol)
-                                                 :container-type 'list :expected-type 'bool :element-type 'i16)))
-       (typep (nth-value 1 (ignore-errors (thrift:invalid-element-type (make-test-protocol) 'list 'bool 'i16)))
-              'thrift:element-type-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:element-type-error
+                                                :protocol (make-test-protocol)
+                                                :container-type 'list
+                                                :expected-type 'bool
+                                                :element-type 'i16))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:invalid-element-type (make-test-protocol)
+                                                                      'list
+                                                                      'bool
+                                                                      'i16)))
+             'thrift:element-type-error)))
 
 (deftest enum-type-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:enum-type-error
-                                                 :protocol (make-test-protocol)
-                                                 :datum 3 :expected-type '(enum "x"))))
-       (typep (nth-value 1 (ignore-errors (thrift:invalid-enum (make-test-protocol) '(enum "x") 3)))
-              'thrift:enum-type-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:enum-type-error
+                                                :protocol (make-test-protocol)
+                                                :datum 3
+                                                :expected-type '(enum "x")))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:invalid-enum (make-test-protocol) '(enum "x") 3)))
+             'thrift:enum-type-error)))
 
 (deftest field-size-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:field-size-error
-                                                 :protocol (make-test-protocol)
-                                                 :name "fieldex" :number -1
-                                                 :datum most-negative-fixnum :expected-type `(integer 0 ,most-positive-fixnum))))
-       (typep (nth-value 1 (ignore-errors (thrift:invalid-field-size (make-test-protocol) -1 "fieldex" `(integer 0 ,most-positive-fixnum) most-negative-fixnum)))
-              'thrift:field-size-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:field-size-error
+                                                :protocol (make-test-protocol)
+                                                :name "fieldex"
+                                                :number -1
+                                                :datum most-negative-fixnum
+                                                :expected-type `(integer 0 ,most-positive-fixnum)))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:invalid-field-size (make-test-protocol)
+                                                                    -1
+                                                                    "fieldex"
+                                                                    `(integer 0 ,most-positive-fixnum)
+                                                                    most-negative-fixnum)))
+             'thrift:field-size-error)))
 
 (deftest field-type-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:field-type-error
-                                                 :protocol (make-test-protocol)
-                                                 :structure-type 'test-struct :name "fieldex" :number 17
-                                                 :expected-type 'bool :datum 12345)))
-       (typep (nth-value 1 (ignore-errors (thrift:invalid-field-type (make-test-protocol) 'test-struct 17 "fieldex" 'bool 12345)))
-              'thrift:field-type-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:field-type-error
+                                                :protocol (make-test-protocol)
+                                                :structure-type 'test-struct
+                                                :name "fieldex"
+                                                :number 17
+                                                :expected-type 'bool
+                                                :datum 12345))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:invalid-field-type (make-test-protocol)
+                                                                    'test-struct 17
+                                                                    "fieldex"
+                                                                    'bool
+                                                                    12345)))
+             'thrift:field-type-error)))
 
 (deftest unknown-field-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:unknown-field-error
-                                                 :protocol (make-test-protocol)
-                                                 :structure-type 'test-struct :name "fieldex" :number 17 :datum 12345)))
-       (typep (nth-value 1 (ignore-errors (thrift:unknown-field (make-test-protocol) 17 "fieldex" 'i16 12345)))
-              'null)))
+  (is (stringp (princ-to-string (make-condition 'thrift:unknown-field-error
+                                                :protocol (make-test-protocol)
+                                                :structure-type 'test-struct
+                                                :name "fieldex"
+                                                :number 17
+                                                :datum 12345))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:unknown-field (make-test-protocol)
+                                                               17
+                                                               "fieldex"
+                                                               'i16
+                                                               12345)))
+             'null)))
 
 (deftest unknown-method-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:unknown-method-error
-                                                 :protocol (make-test-protocol)
-                                                 :identifier "methodex" :request t)))
-       (typep (nth-value 1 (ignore-errors (thrift:unknown-method (make-test-protocol) "methodex" 12345 t)))
-              'thrift:unknown-method-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:unknown-method-error
+                                                :protocol (make-test-protocol)
+                                                :identifier "methodex"
+                                                :request t))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:unknown-method (make-test-protocol)
+                                                                "methodex"
+                                                                12345
+                                                                t)))
+             'thrift:unknown-method-error)))
 
 
 (deftest struct-type-error ()
-  (and (stringp (princ-to-string (make-condition 'thrift:struct-type-error
-                                                 :protocol (make-test-protocol)
-                                                 :expected-type 'test-struct :datum t)))
-       (typep (nth-value 1 (ignore-errors (thrift:invalid-struct-type (make-test-protocol) 'test-struct t)))
-              'thrift:struct-type-error)))
+  (is (stringp (princ-to-string (make-condition 'thrift:struct-type-error
+                                                :protocol (make-test-protocol)
+                                                :expected-type 'test-struct
+                                                :datum t))))
+  (is (typep (nth-value 1 (ignore-errors (thrift:invalid-struct-type (make-test-protocol)
+                                                                     'test-struct
+                                                                     t)))
+             'thrift:struct-type-error)))
