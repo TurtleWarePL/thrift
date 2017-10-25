@@ -10,10 +10,11 @@
   :serial t
   :components ((:file "package")
 	       (:file "test")
+               (:file "utils")
                (:file "setup")
 	       (:file "vector-protocol")
                (:file "conditions")
-               (:file "definition-operators")
+               ;;(:file "definition-operators")
                (:file "protocol")
                #+(or)
                (:module :gen-cl
