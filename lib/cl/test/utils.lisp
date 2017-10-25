@@ -1,3 +1,20 @@
+;;;; Copyright 2010 James Anderson <james.anderson@setf.de>
+
+;;;; Licensed under the Apache License, Version 2.0 (the "License");
+;;;; you may not use this file except in compliance with the License.
+;;;; You may obtain a copy of the License at
+
+;;;;     http://www.apache.org/licenses/LICENSE-2.0
+
+;;;; Unless required by applicable law or agreed to in writing, software
+;;;; distributed under the License is distributed on an "AS IS" BASIS,
+;;;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;;; See the License for the specific language governing permissions and
+;;;; limitations under the License.
+
+;;;; A (meta)package for all sorts of test utils. Meant to be :used by test
+;;;; packages.
+
 (in-package #:thrift-test-utils)
 
 (defparameter *test-root-pathname*
@@ -26,8 +43,7 @@
       (if test-function
         (run-test test-function)
         (warn "test not found: ~s." name))))
-  (:method ((test-function function))
-    ))
+  (:method ((test-function function))))
 
 (defun run-tests (&rest test-names)
   (let ((succeeded 0)
@@ -141,7 +157,6 @@
     (fill (thrift.implementation::get-vector-stream-vector stream) 0)
     stream))
 
-
 (defun test-server (&optional (location *test-location*))
   (setq *test-location* location)
   (or *test-server-process*
@@ -151,7 +166,6 @@
   (when (typep *test-server-process* 'bt:thread)
     (bt:destroy-thread *test-server-process*)
     (setq *test-server-process* nil)))
-;;; (stop-test-server)
 
 (defun call-with-test-services (function &rest services)
   (declare (dynamic-extent function))

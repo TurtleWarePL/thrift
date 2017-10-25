@@ -1,11 +1,23 @@
+;;;; Copyright 2010 James Anderson <james.anderson@setf.de>
+
+;;;; Licensed under the Apache License, Version 2.0 (the "License");
+;;;; you may not use this file except in compliance with the License.
+;;;; You may obtain a copy of the License at
+
+;;;;     http://www.apache.org/licenses/LICENSE-2.0
+
+;;;; Unless required by applicable law or agreed to in writing, software
+;;;; distributed under the License is distributed on an "AS IS" BASIS,
+;;;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;;; See the License for the specific language governing permissions and
+;;;; limitations under the License.
+
+;;;; Tests for transport operations.
+
 (fiasco:define-test-package (#:protocol-tests :in thrift-test:thrift-self-tests)
   (:use #:thrift-test-utils))
 
 (in-package #:protocol-tests)
-
-;;; tests for transport operations
-;;; (run-tests "protocol.*")
-
 
 (defvar *string-w/euro* (cl:map 'string #'code-char '(48 46 57 57 57 8364)))
 
@@ -20,15 +32,15 @@
       (rewind protocol)
       (let ((read (funcall reader protocol)))
         (unless (equalp read value)
-	  (format *trace-output*
-		  "failed: ~a/~a ~s ~s ~s"
-		  reader
-		  writer
-		  value
-		  read
-		  (subseq (thrift.implementation::get-vector-stream-vector transport)
-			  0
-			  (thrift.implementation::stream-position transport)))
+          (format *trace-output*
+                  "failed: ~a/~a ~s ~s ~s"
+                  reader
+                  writer
+                  value
+                  read
+                  (subseq (thrift.implementation::get-vector-stream-vector transport)
+                          0
+                          (thrift.implementation::stream-position transport)))
           (return nil))))))
 
 (deftest write-integer-test ()
@@ -36,7 +48,7 @@
     (is (every #'(lambda (entry)
                    (apply #'test-read-write-equivalence stream entry))
                `((thrift:stream-read-bool thrift:stream-write-bool t nil)
-                 ;; `thfit:byte' is encoded the same in the protocol as i8,
+                 ;; `thift:byte' is encoded the same in the protocol as i8,
                  ;; so it will be read back as i8. There is no good way
                  ;; around that, but these types are equivalent according
                  ;; to spec and `thrift:byte' is deprecated.
@@ -100,7 +112,6 @@
       (is (typep result 'test-struct))
       (is (equal (test-struct-field-one result) "one"))
       (is (equal (test-struct-field-two result) 2)))))
-;;; (run-tests "protocol.stream-read/write-struct")
 
 (deftest write-struct.inline ()
   (let ((struct (make-test-struct :field-one "one" :field-two 2))
@@ -111,8 +122,6 @@
       (is (typep result 'test-struct))
       (is (equal (test-struct-field-one result) "one"))
       (is (equal (test-struct-field-two result) 2)))))
-;;; (run-tests "protocol.stream-read/write-struct.inline")
-
 
 (deftest write-struct.optional ()
   (let ((struct (make-instance 'test-large-struct :field-one 1 :field-two 2))
@@ -146,9 +155,6 @@
     (is (every #'(lambda (entry)
                    (apply #'test-read-write-equivalence stream entry))
                `((thrift:stream-read-map thrift:stream-write-map ,(thrift:map 1 "a" 2 "b")))))))
-;;; (run-tests "protocol.stream-read/write-map")
-
-
 
 (deftest write-list-test ()
   (let ((stream (make-test-protocol)))
@@ -228,4 +234,3 @@
                       slot-count bound-count
                       dynamic-time static-time static-with-time
                       dynamic-bytes static-bytes static-with-bytes))))))
-;;; (time-struct-io)
