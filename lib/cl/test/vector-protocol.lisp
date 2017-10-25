@@ -14,16 +14,17 @@
          (instream (make-instance 'thrift:vector-input-stream :vector nil)))
     (stream-write-sequence outstream data 0 nil)
     (cl:map nil #'(lambda (c) (stream-write-byte outstream (char-code c))) "asdf")
-    (and (every #'eql
-                (concatenate 'vector data (cl:map 'vector #'char-code "asdf"))
-                (subseq (thrift.implementation::get-vector-stream-vector outstream)
-                        0
-                        (thrift.implementation::stream-position outstream)))
-         (let ((data2 (make-array (length data)))
-               (data3 (make-array 4)))
-           (thrift.implementation::setf-vector-stream-vector (thrift.implementation::get-vector-stream-vector outstream)
-                                                             instream)
-           (and (eql (stream-read-sequence instream data2 0 nil) (length data2))
-                (equalp data2 data)
-                (stream-read-sequence instream data3 0 nil)
-                (equal (cl:map 'string #'code-char data3) "asdf"))))))
+    
+    (is (every #'eql
+               (concatenate 'vector data (cl:map 'vector #'char-code "asdf"))
+               (subseq (thrift.implementation::get-vector-stream-vector outstream)
+                       0
+                       (thrift.implementation::stream-position outstream))))
+    (let ((data2 (make-array (length data)))
+          (data3 (make-array 4)))
+      (thrift.implementation::setf-vector-stream-vector (thrift.implementation::get-vector-stream-vector outstream)
+                                                        instream)
+      (is (eql (stream-read-sequence instream data2 0 nil) (length data2)))
+      (is (equalp data2 data))
+      (stream-read-sequence instream data3 0 nil)
+      (is (equal (cl:map 'string #'code-char data3) "asdf")))))
