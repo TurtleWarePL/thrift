@@ -1,10 +1,23 @@
+;;;; Copyright 2010 James Anderson <james.anderson@setf.de>
+;;;;
+;;;; Licensed under the Apache License, Version 2.0 (the "License");
+;;;; you may not use this file except in compliance with the License.
+;;;; You may obtain a copy of the License at
+;;;;
+;;;;     http://www.apache.org/licenses/LICENSE-2.0
+;;;;
+;;;; Unless required by applicable law or agreed to in writing, software
+;;;; distributed under the License is distributed on an "AS IS" BASIS,
+;;;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;;; See the License for the specific language governing permissions and
+;;;; limitations under the License.
+
+;;;; Tests for definition operators.
+
 (fiasco:define-test-package (#:definition-operator-tests :in thrift-test:thrift-self-tests)
   (:use #:thrift-test-utils))
 
 (in-package #:definition-operator-tests)
-
-;;; tests for definition operators
-;;; (run-tests "def-.*")
 
 (deftest define-package ()
   (finishes (thrift:def-package :test-package))
@@ -16,7 +29,6 @@
   (delete-package :test-package-response))
 
 (deftest redefine-package ()
-  ;; redfinition should succeed
   (thrift:def-package :test-package)
   (finishes (thrift:def-package :test-package))
   (is (find-package :test-package))
@@ -25,13 +37,11 @@
   (delete-package :test-package)
   (delete-package :test-package-implementation)
   (delete-package :test-package-response))
-;;; (run-tests "def-package.*")
 
 (deftest define-enum ()
   (finishes (thrift:def-enum "TestEnum" ((first . 1) (second . 2))))
   (is (eql (symbol-value 'test-enum.first) 1))
   (is (eql (symbol-value 'test-enum.second) 2)))
-;;; (run-tests "def-enum")
 
 (deftest define-constant ()
   (finishes (thrift:def-constant "aConstant" 1))
@@ -61,7 +71,6 @@
     (mapc #'(lambda (method) (remove-method (c2mop:method-generic-function method) method))
           (c2mop:specializer-direct-methods (find-class 'test-struct-too)))
     (setf (find-class 'test-struct-too) nil)))
-;;; (run-tests "def-struct")
 
 (defgeneric test-exception-reason (exception))
 
@@ -113,5 +122,4 @@
                ;;(fmakunbound 'thrift-test.test-service::test-method)
                ;;(fmakunbound 'thrift-test.test-service-response::test-method)
                )))))
-;;; (run-tests "def-service")
 
