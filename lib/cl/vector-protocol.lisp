@@ -42,7 +42,7 @@
     :accessor stream-force-output-hook
     :documentation "A function of one argument, the stream, called as the
      base implementation of stream-force-output.")
-   #+(or CMU sbcl lispworks) (direction :initarg :direction)
+   (direction :initarg :direction)
    )
   (:default-initargs
     #+CormanLisp :element-type #+CormanLisp 'character))
