@@ -63,11 +63,7 @@
     (is (equal (test-struct-too-field3 struct) "string value"))
     (is (not (slot-boundp struct 'field2)))
     (is (equal (test-struct-too-field1 struct) -1))
-    (is (typep (nth-value 1 (ignore-errors (setf (test-struct-too-field2 struct) 1.1)))
-               ;; some implementation may not constrain
-               ;; some signal a type error
-               #+ccl 'type-error
-               #+sbcl 'null))           ; how to enable slot type checks?
+    (is (typep (nth-value 1 (ignore-errors (setf (test-struct-too-field1 struct) 1.1))) 'null))
     (mapc #'(lambda (method) (remove-method (c2mop:method-generic-function method) method))
           (c2mop:specializer-direct-methods (find-class 'test-struct-too)))
     (setf (find-class 'test-struct-too) nil)))
