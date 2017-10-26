@@ -77,7 +77,7 @@
     protocol)
 
   (:method ((stream vector-stream))
-    (fill thrift.implementation::get-vector-stream-vector stream 0)
+    (fill (thrift.implementation::get-vector-stream-vector stream) 0)
     stream))
 
 (defun test-server (&optional (location *test-location*))
