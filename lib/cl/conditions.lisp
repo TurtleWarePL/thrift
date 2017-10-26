@@ -38,13 +38,14 @@
 
 ;;; abstract exceptions
 
-(define-condition thrift-error (simple-error)
-  ((type
-    :initform *protocol-ex-unknown*
-    :reader thrift-error-type))
-  (:report (lambda (error stream)
-             (apply #'format stream (thrift-error-format-control error)
-                    (thrift-error-format-arguments error)))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-condition thrift-error (simple-error)
+    ((type
+      :initform *protocol-ex-unknown*
+      :reader thrift-error-type))
+    (:report (lambda (error stream)
+               (apply #'format stream (thrift-error-format-control error)
+                      (thrift-error-format-arguments error))))))
 
 (defgeneric thrift-error-format-control (error)
   (:method ((error thrift-error))
@@ -54,9 +55,10 @@
   (:method ((error thrift-error))
     (list (type-of error) (thrift-error-type error))))
 
-(define-condition protocol-error (thrift-error)
-  ((protocol :initarg :protocol :initform nil
-             :reader protocol-error-protocol)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-condition protocol-error (thrift-error)
+    ((protocol :initarg :protocol :initform nil
+               :reader protocol-error-protocol))))
 
 (defmethod thrift-error-format-control ((error protocol-error))
   (concatenate 'string (call-next-method)
@@ -68,9 +70,10 @@
 
 (define-condition transport-error (thrift-error) ())
 
-(define-condition application-error (protocol-error)
-  ((type :initform *application-ex-unknown*)
-   (condition :initform nil :initarg :condition :reader application-error-condition)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-condition application-error (protocol-error)
+    ((type :initform *application-ex-unknown*)
+     (condition :initform nil :initarg :condition :reader application-error-condition))))
 
 (defmethod thrift-error-format-control ((error application-error))
   (concatenate 'string (call-next-method)
