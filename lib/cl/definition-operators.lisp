@@ -49,7 +49,7 @@
 ;;;;
 ;;;;   <service>-types.lisp : (generated) enums, structs, exceptions, services
 ;;;;   <service>-vars.lisp : (generated) constants
-;;;;   <service.lisp : (authored) the base function definitions
+;;;;   <service.lisp> : (authored) the base function definitions
 ;;;;
 ;;;; The extra file for constants is required, as the generator emits
 ;;;; them before the structs. Each operation comprises three phases:
@@ -58,22 +58,25 @@
 ;;;;    service. This sends a request message and interprets results.
 ;;;;  * The service accepts messages and processes them with individual
 ;;;;    operators which decode arguments, invoke the implementation
-;;;;    operator, and encode the response to return to the client.  *
-;;;;    The implementation operator itself.
+;;;;    operator, and encode the response to return to the client.
+;;;;  * The implementation operator itself.
 ;;;;
 ;;;; The three operators are defined as homologues in three related packages:
 ;;;;
-;;;;  * <namespace> : This, the application interface package, has the
-;;;;    respective namespace name.  It is the home package for the
-;;;;    names for the request proxy function, structure and exception
-;;;;    types and accessors, enum types, and constants
-;;;;  * <namespace>-implementation : This is the home package for
+;;;;  * <namespace>.<service> : This is the package for names of the request
+;;;;    proxy functions.
+;;;;  * <namespace>.<service>-implementation : This is the home package for
 ;;;;    implementation function names. It uses the application
 ;;;;    interface package, but shadows all interface function names,
 ;;;;    and it cross-exports all other interface symbols.
-;;;;  * <namespace>-response : This is the home package for response
+;;;;  * <namespace>.<service>-response : This is the home package for response
 ;;;;    function names. It needs no other symbols as the functions only
 ;;;;    intended role is bound to service instances.
+;;;;
+;;;; Apart from those, there is of course the <namespace> package.
+;;;; This, the application interface package. It has the respective namespace
+;;;; name. It is the home package for the structure and exception types and
+;;;; accessors, enum types, and constants.
 ;;;;
 ;;;; The translated IDL files each begin with an in-package form for
 ;;;; the application interface package and other symbols are generated
