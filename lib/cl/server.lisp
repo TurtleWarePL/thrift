@@ -1,31 +1,31 @@
 (in-package #:org.apache.thrift.implementation)
 
-;;; This file implements service instance and a server interface for the `org.apache.thrift` library.
-;;;
-;;; copyright 2010 [james anderson](james.anderson@setf.de)
-;;;
-;;; Licensed to the Apache Software Foundation (ASF) under one
-;;; or more contributor license agreements. See the NOTICE file
-;;; distributed with this work for additional information
-;;; regarding copyright ownership. The ASF licenses this file
-;;; to you under the Apache License, Version 2.0 (the
-;;; "License"); you may not use this file except in compliance
-;;; with the License. You may obtain a copy of the License at
-;;;
-;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;;
-;;; Unless required by applicable law or agreed to in writing,
-;;; software distributed under the License is distributed on an
-;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-;;; KIND, either express or implied. See the License for the
-;;; specific language governing permissions and limitations
-;;; under the License.
+;;;; This file implements service instance and a server interface for the `org.apache.thrift` library.
+;;;;
+;;;; copyright 2010 [james anderson](james.anderson@setf.de)
+;;;;
+;;;; Licensed to the Apache Software Foundation (ASF) under one
+;;;; or more contributor license agreements. See the NOTICE file
+;;;; distributed with this work for additional information
+;;;; regarding copyright ownership. The ASF licenses this file
+;;;; to you under the Apache License, Version 2.0 (the
+;;;; "License"); you may not use this file except in compliance
+;;;; with the License. You may obtain a copy of the License at
+;;;;
+;;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;;
+;;;; Unless required by applicable law or agreed to in writing,
+;;;; software distributed under the License is distributed on an
+;;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+;;;; KIND, either express or implied. See the License for the
+;;;; specific language governing permissions and limitations
+;;;; under the License.
 
 
-;;; The principal Thrift entity for reomte interaction is the `service`. A service is a named
-;;; collection of operations. A server associates a service with a listening port, accepts
-;;; request for named operations, decodes and dsipatchs data to the service's operations,
-;;; encodes the results and returns them them to thr requesting client.
+;;;; The principal Thrift entity for reomte interaction is the `service`. A service is a named
+;;;; collection of operations. A server associates a service with a listening port, accepts
+;;;; request for named operations, decodes and dsipatchs data to the service's operations,
+;;;; encodes the results and returns them them to thr requesting client.
 
 
 (defclass service ()
