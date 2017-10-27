@@ -121,8 +121,6 @@
 (defgeneric stream-write-set (protocol value &optional type))
 (defgeneric stream-write-set-end (protocol))
 
-
-
 ;;;
 ;;; macros
 ;;; nb. this does not interact at all nicely with redefined macros.
@@ -180,7 +178,6 @@
 
 #+digitool (setf (ccl:assq 'expand-iff-constant-types ccl:*fred-special-indent-alist*) 2)
 
-
 ;;;
 ;;; classes
 
@@ -205,17 +202,13 @@
     :initform nil :initarg :multiplexed :reader protocol-multiplexed-p
     :documentation "Multiplexed protocol specifies service for each method.")))
 
-
 (defclass encoded-protocol (protocol)
   ((string-encoder :initarg :string-encoder :reader transport-string-encoder)
    (string-decoder :initarg :string-decoder :reader transport-string-decoder))
   (:default-initargs :charset :utf8))
 
-
-
 ;;;
 ;;; protocol operators
-
 
 (defmethod initialize-instance ((protocol encoded-protocol) &rest initargs &key (charset nil))
   (declare (dynamic-extent initargs))
@@ -256,47 +249,34 @@
     (when (next-method-p) (call-next-method))
     (apply #'protocol-close stream args)))
 
-
 (defgeneric protocol-version (protocol)
   (:method ((protocol protocol))
     (cons (protocol-version-id protocol) (protocol-version-number protocol))))
-
 
 (defgeneric protocol-find-thrift-class (protocol name)
   (:method ((protocol protocol) (name string))
     (or (find-thrift-class (str-sym name) nil)
         (class-not-found protocol name))))
 
-
 (defgeneric protocol-next-sequence-number (protocol)
   (:method ((protocol protocol))
     (incf (protocol-sequence-number protocol))))
-
 
 (defmethod stream-position ((protocol protocol) &optional new-position)
   (if new-position
     (stream-position (protocol-input-transport protocol) new-position)
     (stream-position (protocol-input-transport protocol))))
 
-
 ;;;
 ;;; type  code <-> name operators are specific to each protocol
 
-(defgeneric type-code-name (protocol code)
-  )
+(defgeneric type-code-name (protocol code))
 
+(defgeneric type-name-code (protocol name))
 
-(defgeneric type-name-code (protocol name)
-  )
+(defgeneric message-type-code (protocol message-name))
 
-
-(defgeneric message-type-code (protocol message-name)
-  )
-
-(defgeneric message-type-name (protocol type-code)
-  )
-
-
+(defgeneric message-type-name (protocol type-code))
 
 ;;;
 ;;; input implementation
@@ -330,7 +310,6 @@
              type (stream-read-type protocol))))
     (values identifier id-number type)))
 
-
 (defmethod stream-read-field-end ((protocol protocol))
   "The base method does nothing.")
 
@@ -361,8 +340,6 @@
 ;;; a compiler macro would find no use, since the macro expansion for reading a struct already
 ;;; incorporates dispatches on field id to an inline-able call stream-read-value-as, while stream-read-field
 ;;; never itself knows the type at compile time.
-
-
 
 (defmethod stream-read-struct-begin ((protocol protocol))
   (ecase (protocol-struct-id-mode protocol)
@@ -489,10 +466,6 @@
                               nconc (list (field-definition-initarg fd) (field-definition-name fd)))
                       ,extra-initargs))))))))
 
-
-
-
-
 (defmethod stream-read-message-begin ((protocol protocol))
   "Read a message header strictly.
  PROTOCOL : protocol
@@ -517,7 +490,6 @@
           (sequence (stream-read-i32 protocol)))
       (values name type-name sequence))))
 
-
 (defmethod stream-read-message ((protocol protocol))
   "Perform a generic 'read' of a complete message.
  PROTOCOL : protocol
@@ -541,8 +513,6 @@
       (values message-name type sequence body))))
 
 (defmethod stream-read-message-end ((protocol protocol)))
-
-
 
 (defmethod stream-read-map-begin ((protocol protocol))
   ; t_key t_val size
@@ -589,8 +559,6 @@
              (stream-read-map-end ,prot)
              (nreverse ,map)))))))
 
-
-
 (defmethod stream-read-list-begin ((protocol protocol))
   ; t_elt size
   (values (stream-read-type protocol)
@@ -623,8 +591,6 @@
                     collect (stream-read-value-as ,prot ',type))
          (stream-read-list-end ,prot))))))
 
-
-
 (defmethod stream-read-set-begin ((protocol protocol))
   (values (stream-read-type protocol)
           (stream-read-i32 protocol)))
@@ -656,8 +622,6 @@
                     collect (stream-read-value-as ,prot ',type))
          (stream-read-set-end ,prot))))))
 
-
-
 (defmethod stream-read-enum ((protocol protocol) type)
   "Read an i32 and verify type"
   (let ((value (stream-read-i32 protocol)))
@@ -673,7 +637,6 @@
          (invalid-enum protocol ',type value))
        value)
     `(stream-read-i32 ,prot)))
-
 
 (defgeneric stream-read-value-as (protocol type)
   (:documentation "Read a value if a specified type.")
@@ -721,7 +684,6 @@
   (:method ((protocol protocol) (type-code (eql 'thrift:set)))
     (stream-read-set protocol)))
 
-
 (define-compiler-macro stream-read-value-as (&whole form protocol type)
   "Given a constant type, generate the respective read operations.
  Recognizes all thrift types, container x element type combinations
@@ -756,7 +718,6 @@
     (enum-type
      `(stream-read-enum ,protocol ',(str-sym (second type))))))
 
-
 (defgeneric stream-read-typed-value (protocol)
   (:documentation "Given a PROTOCOL instance, decode the value's type and then the value itself.
  This is used to decode adhoc data for exchange as a binary value.")
@@ -764,8 +725,6 @@
   (:method ((protocol protocol))
     (let ((type-name (stream-read-type protocol)))
       (stream-read-value-as protocol type-name))))
-
-
 
 ;;; output implementation
 ;;; nb. defined in this sequence to ensure compile-macro presence is whether loading one or
@@ -794,8 +753,6 @@
     `(progn (stream-write-field-begin ,prot ,identifier-name ',type ,identifier-number)
             (stream-write-value-as ,prot ,value ',type)
             (stream-write-field-end ,prot)))))
-
-
 
 (defmethod stream-write-struct-begin ((protocol protocol) (name string))
   (ecase (protocol-struct-id-mode protocol)
@@ -904,8 +861,6 @@
               (assert (typep ,value ',type) ()
                       "Attempt to serialize ~s as ~s." ,value ',type)))))))))
 
-
-
 (defmethod stream-write-message-begin ((protocol protocol) name type sequence)
   (stream-write-i8 protocol (protocol-version-id protocol))
   (stream-write-i8 protocol (protocol-version-number protocol))
@@ -934,7 +889,6 @@
   (stream-write-struct protocol object type)
   (stream-write-message-end protocol))
 
-
 (defmethod stream-write-message-end ((protocol protocol))
   (stream-force-output (protocol-output-transport protocol)))
 
@@ -948,8 +902,6 @@
     (stream-write-message protocol
                           (make-instance 'application-error :condition exception)
                           'exception)))
-
-
 
 (defmethod stream-write-map-begin ((protocol protocol) key-type value-type size)
   (stream-write-type protocol key-type)
@@ -980,8 +932,6 @@
                          (stream-write-value-as ,prot element-value ',value-type)))
          (stream-write-map-end ,prot)))))
 
-
-
 (defmethod stream-write-list-begin ((protocol protocol) (type t) length)
   (stream-write-type protocol type)
   (stream-write-i32 protocol length))
@@ -1009,8 +959,6 @@
            #+thrift-check-types (assert (typep element ',element-type))
            (stream-write-value-as ,prot element ',element-type))
          (stream-write-list-end ,prot)))))
-
-
 
 (defmethod stream-write-set-begin ((protocol protocol) (type t) length)
   (stream-write-type protocol type)
@@ -1041,8 +989,6 @@
          (stream-write-value-as ,prot element ',element-type))
        (stream-write-set-end ,prot)))))
 
-
-
 (defgeneric stream-write-value (protocol value)
   (:method ((protocol protocol) (value null))
     (stream-write-bool protocol value))
@@ -1071,7 +1017,6 @@
     (if (consp (first value))
       (stream-write-map protocol value)
       (stream-write-list protocol value))))
-
 
 (defgeneric stream-write-value-as (protocol value type)
   (:method ((protocol protocol) (value t) (type-code fixnum))
@@ -1132,7 +1077,6 @@
         (thrift:set (stream-write-set protocol value (str-sym t1)))
         (thrift:map (stream-write-map protocol value (str-sym t1) (str-sym t2)))))))
 
-
 (define-compiler-macro stream-write-value-as (&whole form protocol value type)
   "See stream-read-value-as."
 
@@ -1163,7 +1107,6 @@
     (enum-type
      `(stream-write-i32 ,protocol ,value))))
 
-
 (defgeneric stream-write-typed-value (protocol value)
   (:documentation "Given a PROTOCOL instance and a VALUE, encode the value's type and then the value itself.
  This is used to encode adhoc data for exchange as a binary value.")
@@ -1180,7 +1123,6 @@
   (:method ((protocol protocol) &key condition)
     (error 'application-error :protocol protocol
            :condition condition)))
-
 
 (defgeneric class-not-found (protocol identifier)
   (:method ((protocol protocol) identifier)
@@ -1203,7 +1145,6 @@
   (:method ((class thrift-class) (id t) (name t) (type t) (value t))
     nil))
 
-
 (defgeneric invalid-field-size (protocol field-id field-name expected-type size)
   (:documentation "Called when a read structure field exceeds the dimension limit.
  The base method for binary protocols signals a field-size-error")
@@ -1211,7 +1152,6 @@
   (:method ((protocol protocol) (id integer) (name t) (expected-type t) (size t))
     (error 'field-size-error :protocol protocol
            :name name :number id :expected-type expected-type :datum size)))
-
 
 (defgeneric invalid-field-type (protocol structure-type field-id field-name expected-type value)
   (:documentation "Called when a read structure field is not present in the specified type.
@@ -1223,7 +1163,6 @@
             :structure-type structure-type :name name :number id-number :expected-type expected-type :datum value)
     value))
 
-
 (defgeneric invalid-element-type (protocol container-type expected-type type)
   (:documentation "Called when the element type of a received compound value is not the specified type.
  The base method for binary protocols signals an element-type-error")
@@ -1232,33 +1171,27 @@
     (error 'element-type-error :protocol protocol
            :container-type container-type :expected-type expected-type :element-type type)))
 
-
 (defgeneric unknown-method (protocol method-identifier sequence message)
   (:method ((protocol protocol) method-identifier (sequence t) (message t))
     (error 'unknown-method-error :identifier method-identifier :request message)))
 
-
 (defgeneric protocol-error (protocol type &optional message &rest arguments)
   (:method ((protocol protocol) type &optional message &rest arguments)
     (error 'protocol-error :type type :message message :message-arguments arguments)))
-
 
 (defgeneric invalid-protocol-version (protocol id version)
   (:method ((protocol protocol) id version)
     (error 'protocol-version-error :protocol protocol :datum (cons id version)
            :expected-type (protocol-version protocol))))
 
-
 (defgeneric invalid-sequence-number (protocol number expected-number)
   (:method ((protocol protocol) number expected-number)
     (error 'sequence-number-error :protocol protocol
            :number number :expected-number expected-number)))
 
-
 (defgeneric invalid-struct-type (protocol type datum)
   (:method ((protocol protocol) type datum)
     (error 'struct-type-error :protocol protocol :expected-type type :datum datum)))
-
 
 ;;;
 ;;; response processing exception interface

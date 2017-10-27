@@ -1,4 +1,4 @@
-(in-package :cl-user)
+(in-package #:cl-user)
 
 (require "asdf")
 (load (merge-pathnames "../../lib/cl/load-locally.lisp" *load-truename*))
@@ -10,11 +10,11 @@
 
 (net.didierverna.clon:nickname-package)
 
-(defpackage :thrift-cross
-  (:use :common-lisp :fiasco)
-  (:export :cross-test))
+(defpackage #:thrift-cross
+  (:use #:common-lisp #:fiasco)
+  (:export #:cross-test))
 
-(in-package :thrift-cross)
+(in-package #:thrift-cross)
 
 (defparameter *prot* nil)
 
@@ -26,22 +26,22 @@
     (flag :short-name "h" :long-name "help"
           :description "Print this help and exit.")
     (stropt :long-name "host"
-	    :description "The host to connect to."
-	    :default-value "localhost"
-	    :argument-name "ARG")
+            :description "The host to connect to."
+            :default-value "localhost"
+            :argument-name "ARG")
     (stropt :long-name "port"
-	    :description "Number of the port to listen for connections on."
-	    :default-value "9090"
-	    :argument-name "ARG"
-	    :argument-type :optional)
+            :description "Number of the port to listen for connections on."
+            :default-value "9090"
+            :argument-name "ARG"
+            :argument-type :optional)
     (stropt :long-name "transport"
-	    :description "Transport: transport to use (\"buffered\", \"framed\")"
-	    :default-value "buffered"
-	    :argument-name "ARG")
+            :description "Transport: transport to use (\"buffered\", \"framed\")"
+            :default-value "buffered"
+            :argument-name "ARG")
     (stropt :long-name "protocol"
-	    :description "Protocol: protocol to use (\"binary\", \"multi\")"
-	    :default-value "binary"
-	    :argument-name "ARG")))
+            :description "Protocol: protocol to use (\"binary\", \"multi\")"
+            :default-value "binary"
+            :argument-name "ARG")))
 
 (defun main ()
   "Entry point for our standalone application."
@@ -50,15 +50,15 @@
     (clon:help)
     (clon:exit))
   (let ((port "9090")
-	(host "localhost")
+        (host "localhost")
         (framed nil)
         (multiplexed nil))
     (clon:do-cmdline-options (option name value source)
       (print (list option name value source))
       (if (string= name "host")
-	  (setf host value))
+          (setf host value))
       (if (string= name "port")
-	  (setf port value))
+          (setf port value))
       (if (string= name "transport")
           (cond ((string= value "buffered") (setf framed nil))
                 ((string= value "framed") (setf framed t))

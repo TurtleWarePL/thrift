@@ -11,9 +11,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,8 +30,6 @@
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)          ; for batch compilation
-
-
   (defun %pkg-name (service suffix)
     (alexandria:symbolicate (package-name *package*) #\. service suffix))
 
@@ -60,12 +58,12 @@
                                 (setf case :lower)
                                 (vector-push-extend c result))))))
       (subseq result 0)))
-  
+
   (defun cons-symbol (package &rest args)
     "Construct a symbol given string designators. If package is null, the symbol is
  a new, uninterned symbol."
     (declare (dynamic-extent args))
-    
+
     (flet ((element-length (element)
              (if element (length (string element)) 0)))
       (declare (dynamic-extent #'element-length))
@@ -97,7 +95,7 @@
           (or (find-symbol name package)
               (intern (copy-seq name) package))
           (make-symbol (copy-seq name))))))
-  
+
   (defun str-sym (&rest strs)
     "Given a sequence of symbol name consititents, construct a symbol observing current
  reader case settings. By default intern the symbol in the current *package*.
@@ -114,9 +112,9 @@
             (apply #'cons-symbol (cons-symbol :keyword (subseq first 0 colon))
                    (subseq first (1+ colon)) strs)
             (apply #'cons-symbol *package* first strs))))))
-  
+
   ;;; (assert (equal (list (str-sym "keyword:a") (str-sym "keyword:" "a") (str-sym "a" "sdf")) '(:a :a thrift-generated::asdf)))
-  
+
   (defun response-str-sym (service-identifier method-identifier)
     (let* ((*package* (response-package (str-sym service-identifier)))
            (sym (str-sym method-identifier)))
@@ -148,5 +146,4 @@
 
   (defun str (&rest args)
     (declare (dynamic-extent args))
-    (apply #'concatenate 'string args))
-  )
+    (apply #'concatenate 'string args)))

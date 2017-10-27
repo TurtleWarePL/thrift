@@ -11,9 +11,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -81,7 +81,6 @@
 ;;;
 ;;; [1]: $THRIFT/compiler/src/generate/t_cl_generator.cc
 
-          
 (defun parm-to-field-decl (parameter-spec)
   "Convert a specialize parameter declaration into the form for a structure field declaration
      (id-name type id)  -> (id-name default &key type id documentation)
@@ -90,7 +89,6 @@
 
   (destructuring-bind (identifier type id &optional default) parameter-spec
     `(,identifier ,default :id ,id :type ,type)))
-
 
 ;;;
 ;;; definition operators
@@ -106,21 +104,19 @@
            (:import-from :common-lisp nil t)
            (:documentation ,(format nil "This is the application interface package for ~a.
  It uses the generic THRIFT package for access to the library interface." base-package-name))))
-       
+
        (unless (find-package ,implementation-name)
          (defpackage ,implementation-name
            (:use :thrift :common-lisp)
-	   (:shadowing-import-from :thrift
-				   :float :list :set :map :byte :type-of)
+           (:shadowing-import-from :thrift
+                                   :float :list :set :map :byte :type-of)
            (:documentation ,(format nil "This is the implementation package for ~a.
  It uses the generic THRIFT package for access to the library interface." name))))
-       
+
        (unless (find-package ,response-name)
          (defpackage ,response-name
            (:use)
            (:documentation ,(format nil "This is the response package for ~a. It is isolated." name)))))))
-
-
 
 (defmacro def-enum (identifier entries)
   (assert (stringp identifier))
@@ -140,14 +136,10 @@
                 (export '(,name ,@value-names) (symbol-package ',name)))
               ',name))))
 
-
-
 (defmacro def-constant (identifier val)
   "Generate a defparameter form, as the 'constants' are often bound to constructed values."
   (assert (stringp identifier))
   `(defparameter ,(str-sym identifier) ,val))
-
-
 
 (defmacro def-struct (identifier fields &rest options)
   "DEF-STRUCT identifier [doc-string] ( field-specifier* ) option*
@@ -234,7 +226,6 @@
                      (symbol-package ',name))
              (setf (find-thrift-class ',name) (find-class ',name)))))))
 
-
 (defmacro def-exception (identifier fields &rest options)
   "DEF-EXCEPTION identifier [doc-string] ( field-specifier* ) option*
  [Macro]
@@ -249,7 +240,7 @@
  a proxy struct class is defined for codec use.  The proxy class is
  bound as the class name's thrift class, while the struct class is
  bound as the CLOS class."
-  
+
   (let* ((metaclass (or (second (assoc :metaclass options)) 'thrift-exception-class))
          (identifier (or (second (assoc :identifier options)) identifier))
          (name (str-sym identifier))
@@ -291,8 +282,6 @@
                  (list ,@(loop for (slot-identifier) in fields
                                collect `(,(str-sym identifier "-" slot-identifier) error)))))
        (setf (find-thrift-class ',name) (find-class ',struct-name)))))
-
-
 
 (defun generate-struct-decoder (prot class-form field-definitions extra-field-plist)
   "Generate a form which decodes a the given struct fiels in-line.
@@ -338,7 +327,6 @@
 (defmacro decode-struct (prot class field-definitions extra-plist)
   (generate-struct-decoder prot class field-definitions extra-plist))
 
-
 (defmacro def-request-method (name (parameter-list return-type) &rest options)
   "Generate a request function definition.
  Augment the base function signature with an initial
@@ -360,7 +348,7 @@
          (reply-struct (or (second (assoc :reply-struct-type options))
                            (str method-identifier "_result")))
          (success (str-sym "success")))
-    
+
     (with-gensyms (gprot request-identifier extra-initargs)
       `(progn
          (declaim (ftype (function (protocol ,@type-names)) ,name))
@@ -412,15 +400,13 @@
                     (response-exception ,gprot request-message-identifier sequence
                                         (prog1 (stream-read-struct ,gprot *response-exception-type*)
                                           (stream-read-message-end ,gprot))))))))))))
-    
-
 
 (defmacro def-response-method (name (parameter-list return-type) &rest options)
   "Generate a response function definition.
  The method is defined with three arguments, a service, a sequence number and a protocol.
  The default method decodes the declared argument struct, invokes the base operator and, depending
  on the return type, encodes a response message. The given sequence number is reused in the response."
-  
+
   (with-gensyms (service response-identifier seq gprot extra-args)
     (let* ((method-identifier (or (second (assoc :method-identifier options)) (string name)))
            (documentation (second (assoc :documentation options)))
@@ -428,7 +414,7 @@
            (implementation (or (second (assoc :implementation-function options))
                                (error "An implementation function is required.")))
            (parameter-names (mapcar #'(lambda (a) (str-sym (first a))) parameter-list))
-	   (parameter-count (length parameter-list))
+           (parameter-count (length parameter-list))
            (defaults (mapcar #'(lambda (a) (fourth a)) parameter-list))
            (call-struct (or (second (assoc :call-struct options))
                             (str method-identifier "_args")))
@@ -436,50 +422,49 @@
                              (str method-identifier "_result")))
            (exceptions (rest (assoc :exceptions options)))
            (application-form `(if ,extra-args
-				  (apply #',implementation ,@parameter-names ,extra-args)
-				  (,implementation ,@parameter-names))))
+                                  (apply #',implementation ,@parameter-names ,extra-args)
+                                  (,implementation ,@parameter-names))))
       `(progn (declaim (ftype (function ,(make-list parameter-count :initial-element t)) ,implementation))
               (declaim (ftype (function (t t protocol)) ,name))
-	      (defun ,name (,service ,seq ,gprot)
-		,@(when documentation `(,documentation))
-		(let (,@(mapcar #'list parameter-names defaults)
+              (defun ,name (,service ,seq ,gprot)
+                ,@(when documentation `(,documentation))
+                (let (,@(mapcar #'list parameter-names defaults)
                       (,response-identifier ,method-identifier)
                         (,extra-args nil))
                   (declare (ignorable ,response-identifier))
-		  ,(generate-struct-decoder gprot `(find-thrift-class ',(str-sym call-struct))
-					    (mapcar #'parm-to-field-decl parameter-list) extra-args)
-		  ,(let ((expression
-			  (cond (oneway-p
-				 application-form)
-				((eq return-type 'void)
-				 `(prog1
+                  ,(generate-struct-decoder gprot `(find-thrift-class ',(str-sym call-struct))
+                                            (mapcar #'parm-to-field-decl parameter-list) extra-args)
+                  ,(let ((expression
+                          (cond (oneway-p
+                                 application-form)
+                                ((eq return-type 'void)
+                                 `(prog1
                                       ,application-form
-				    (stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
-				    (stream-write-struct ,gprot (thrift:list) ',(str-sym reply-struct))
-				    (stream-write-message-end ,gprot)))
-				(t
-				 `(let ((result ,application-form))
-				    (stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
-				    (stream-write-struct ,gprot (thrift:list (cons 0 result)) ',(str-sym reply-struct))
-				    (stream-write-message-end ,gprot)
-				    result)))))
-		     (if exceptions
+                                    (stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
+                                    (stream-write-struct ,gprot (thrift:list) ',(str-sym reply-struct))
+                                    (stream-write-message-end ,gprot)))
+                                (t
+                                 `(let ((result ,application-form))
+                                    (stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
+                                    (stream-write-struct ,gprot (thrift:list (cons 0 result)) ',(str-sym reply-struct))
+                                    (stream-write-message-end ,gprot)
+                                    result)))))
+                     (if exceptions
                          `(handler-case ,expression
                             ,@(loop for exception-spec in exceptions
-				 collect (destructuring-bind (field-name default &key type id)
-					     exception-spec
-					   (declare (ignore field-name default))
-					   (let ((external-exception-type (second type)))
-					     `(,(str-sym external-exception-type) (condition)
-						;; sent as a reply in order to effect operation-specific exception
-						;; processing.
-						(stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
-						(stream-write-struct ,gprot (thrift:list (cons ,id condition))
-								     ',(str-sym reply-struct))
-						(stream-write-message-end ,gprot)
-						condition)))))
+                                 collect (destructuring-bind (field-name default &key type id)
+                                             exception-spec
+                                           (declare (ignore field-name default))
+                                           (let ((external-exception-type (second type)))
+                                             `(,(str-sym external-exception-type) (condition)
+                                                ;; sent as a reply in order to effect operation-specific exception
+                                                ;; processing.
+                                                (stream-write-message-begin ,gprot ,response-identifier 'reply ,seq)
+                                                (stream-write-struct ,gprot (thrift:list (cons ,id condition))
+                                                                     ',(str-sym reply-struct))
+                                                (stream-write-message-end ,gprot)
+                                                condition)))))
                          expression))))))))
-
 
 (defun %generate-method (service-identifier method-declaration)
   (destructuring-bind (method-identifier
@@ -531,7 +516,7 @@
 
  NB. THis must operate as a top-level form in order that the argument structure definitions be
  available to compile the request/response functions."
-  
+
   (let* ((name (str-sym identifier))
          (class-identifier (second (assoc :class options)))
          (class (if class-identifier (str-sym class-identifier) 'service))
@@ -566,5 +551,3 @@
                 :documentation ,(format nil "~@[~a~%---~%~]~(~{~{~a~24t~a : ~a~}~^~%~}~)"
                                         documentation (sort method-interfaces #'string-lessp :key #'first))
                 ,@initargs)))))
-
-

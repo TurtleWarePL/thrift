@@ -11,9 +11,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,7 +25,6 @@
 ;;; The container types are defined to accept element type constraints.
 ;;; Distinguish those types which are lisp/thrift homologues.
 ;;; Define types for the type specifiers themselves for use at compile-time.
-
 
 (deftype bool () 'boolean)
 (deftype thrift:byte () '(signed-byte 8))
@@ -40,7 +39,6 @@
 (deftype double () 'double-float)
 ;;; this is not what the spec says (it claims i8), but that makes no sense
 (deftype binary () '(array (unsigned-byte 8) (*)))
-
 
 (deftype thrift:list (&optional element-type)
   "The thrift:list container type is implemented as a cl:list. The element type
@@ -59,7 +57,6 @@
  serve for declaration, but not discrimination. An empty map should conform."
   (declare (ignore key-type value-type))
   'list)
-
 
 (deftype base-type ()
   "Indicates the union of thrift base (atomic) types."
@@ -106,7 +103,6 @@
     (null '(or thrift-object thrift-error))
     (symbol identifier)))
 
-
 (defparameter *container-limit* nil
   "When non-null, the integer value limits the permissible container size.")
 
@@ -126,7 +122,7 @@
   (:documentation "Implements an equivalent to cl:type-of, but return the most specific thrift
  type instead of the cl type. This is used to determine the encoding for dynamically generated
  messages.")
-  
+
   (:method ((value null))
     'bool)
   (:method ((value (eql t)))
@@ -149,7 +145,6 @@
       'thrift:map
       'thrift:list)))
 
-
 (defgeneric type-name-class (type-name)
   (:documentation "Return the lisp type equivalent for the given thrift type.
  The value is universal. it is used to construct generic function lambda lists.
@@ -167,7 +162,6 @@
       ((thrift:list thrift:set) 'list)
       (thrift:map 'list))))
 
-
 (defgeneric type-category (type)
   (:documentation "Return the type name to match decoded values.")
 
@@ -176,8 +170,8 @@
   (:method ((type cons))
     (let ((first (first type)))
       (if (eql first 'thrift:enum)
-	  'i32
-	  first))))
+          'i32
+          first))))
 
 ;;;
 ;;; primitive constructors
@@ -197,7 +191,6 @@
 
 (defun thrift:set (&rest values)
   values)
-
 
 ;;;
 ;;; primitive accessors
@@ -231,13 +224,10 @@
                  ,store)
               `(map-get ,access-form ,ktemp)))))
 
-
 (defun map-map (function map)
   (loop for (key . value) in map
         do (funcall function key value))
   nil)
 
-
 (defun map-size (map)
   (length map))
-

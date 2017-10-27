@@ -11,9 +11,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -59,7 +59,6 @@
  each service is bound to a global parameter named as its Lisp equivalent. A service can also
  serve as the root for a set of subsidiary services, to which it defers method look-ups."))
 
-
 (defclass server ()
   ((services
     :initform nil :initarg :services
@@ -70,11 +69,9 @@
      an exception is returned."))
   (:documentation "A server associates a root service with a request transport."))
 
-
 (defclass socket-server (server)
   ((socket :accessor server-socket :initarg :socket))
   (:documentation "The server class which combines services with a listening socket."))
-
 
 (defun thriftp (uri)
   "Check whether the URI is a Thrift URI."
@@ -82,8 +79,8 @@
 
 ;;; A special type to easily distinguish Thrift URIs.
 (deftype thrift () '(and
-		     puri:uri
-		     (satisfies thriftp)))
+                     puri:uri
+                     (satisfies thriftp)))
 
 ;;;
 ;;; service operators
@@ -135,7 +132,6 @@
   (:method ((function null) (service service) (identifier string))
     (remhash identifier (service-methods service))))
 
-
 ;;;
 ;;; server operators
 
@@ -146,7 +142,6 @@
 (defgeneric server-output-transport (server connection)
   (:method ((server socket-server) (socket usocket:usocket))
     (make-instance 'socket-transport :socket socket :direction :output)))
-    
 
 (defmethod accept-connection ((s socket-server))
   (usocket:socket-accept (server-socket s) :element-type 'unsigned-byte))
@@ -158,7 +153,6 @@
   (:method ((server socket-server) input output)
     (make-instance 'binary-protocol :input-transport input :output-transport output
                    :direction :io)))
-
 
 (defparameter *debug-server* t)
 
@@ -182,7 +176,7 @@
         (server-close server))))
 
   (:method ((s socket-server) (services list) &key framed multiplexed &allow-other-keys)
-    (loop 
+    (loop
       (let ((connection (accept-connection s)))
         (if (open-stream-p (usocket:socket-stream connection))
           (let ((input-transport (server-input-transport s connection))
@@ -205,11 +199,10 @@
                                   (loop while (open-stream-p input-transport)
                                      do (process services protocol))))
               (close input-transport)
-              (close output-transport))))   
+              (close output-transport))))
           ;; listening socket closed
           (return))))))
 
-  
 (defgeneric process (service protocol)
   (:documentation "Combine a service PEER with an input-protocol and an output-protocol to control processing
  the next message on the peer's input connection. The base method reads the message, decodes the
@@ -235,5 +228,3 @@
            (unexpected-response protocol request-identifier sequence-number (consume-message)))
           (exception
            (request-exception protocol request-identifier sequence-number (consume-message))))))))
-
-
