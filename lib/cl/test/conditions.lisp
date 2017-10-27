@@ -22,7 +22,6 @@
 (deftest thrift-error ()
   (is (stringp (princ-to-string (make-condition 'thrift:thrift-error)))))
 
-
 (deftest application-error ()
   (is (stringp
        (princ-to-string
@@ -124,7 +123,6 @@
                                                                 12345
                                                                 t)))
              'thrift:unknown-method-error)))
-
 
 (deftest struct-type-error ()
   (is (stringp (princ-to-string (make-condition 'thrift:struct-type-error

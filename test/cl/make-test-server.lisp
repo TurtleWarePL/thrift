@@ -1,4 +1,4 @@
-(in-package :cl-user)
+(in-package #:cl-user)
 
 (require "asdf")
 (load (merge-pathnames "../../lib/cl/load-locally.lisp" *load-truename*))

@@ -184,7 +184,6 @@
    #:void
    ))
 
-
 (defpackage #:org.apache.thrift.implementation
   (:use #:common-lisp #:org.apache.thrift)
   (:nicknames #:thrift.implementation)

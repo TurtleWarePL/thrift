@@ -1,6 +1,5 @@
 (in-package #:common-lisp-user)
 
-
 ;;; This files defines the ASDF system for the `org.apache.thrift` library.
 ;;;
 ;;; Licensed to the Apache Software Foundation (ASF) under one
@@ -10,9 +9,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,15 +19,14 @@
 ;;; specific language governing permissions and limitations
 ;;; under the License.
 
-
 (asdf:defsystem #:thrift
   :depends-on (#:puri
                #:usocket
-               #:closer-mop 
+               #:closer-mop
                #:trivial-utf-8
-	       #:ieee-floats
-	       #:trivial-gray-streams
-	       #:alexandria)
+               #:ieee-floats
+               #:trivial-gray-streams
+               #:alexandria)
   :description "org.apache.thrift implements a Common Lisp binding for the Apache Thrift cross-language
  services protocol."
   :serial t
@@ -52,6 +50,4 @@
  access to remote services. See README.md for more information.
 
  [1]: http://incubator.apache.org/thrift/static/thrift-20070401.pdf
- [2]: http://wiki.apache.org/thrift/
- ")
-
+ [2]: http://wiki.apache.org/thrift/")
