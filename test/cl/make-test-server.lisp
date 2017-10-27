@@ -4,9 +4,9 @@
 (load (merge-pathnames "../../lib/cl/load-locally.lisp" *load-truename*))
 (load (merge-pathnames "externals/bundle.lisp" *load-truename*))
 (asdf:load-system :net.didierverna.clon)
-(asdf:load-asd (merge-pathnames "gen-cl/ThriftTest/thrift-gen-ThriftTest.asd"))
+(asdf:load-asd (merge-pathnames "gen-cl/ThriftTest/thrift-gen-ThriftTest.asd" *load-truename*))
 (asdf:load-system :thrift-gen-thrifttest)
-(load (merge-pathnames "implementation.lisp"))
+(load (merge-pathnames "implementation.lisp" *load-truename*))
 
 (net.didierverna.clon:nickname-package)
 
