@@ -1,30 +1,29 @@
 (in-package #:org.apache.thrift.implementation)
 
-;;; This file defines the abstract '`protocol` layer for the `org.apache.thrift` library.
-;;;
-;;; copyright 2010 [james anderson](james.anderson@setf.de)
-;;;
-;;; Licensed to the Apache Software Foundation (ASF) under one
-;;; or more contributor license agreements. See the NOTICE file
-;;; distributed with this work for additional information
-;;; regarding copyright ownership. The ASF licenses this file
-;;; to you under the Apache License, Version 2.0 (the
-;;; "License"); you may not use this file except in compliance
-;;; with the License. You may obtain a copy of the License at
-;;;
-;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;;
-;;; Unless required by applicable law or agreed to in writing,
-;;; software distributed under the License is distributed on an
-;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-;;; KIND, either express or implied. See the License for the
-;;; specific language governing permissions and limitations
-;;; under the License.
+;;;; This file defines the abstract '`protocol` layer for the `org.apache.thrift` library.
+;;;;
+;;;; copyright 2010 [james anderson](james.anderson@setf.de)
+;;;;
+;;;; Licensed to the Apache Software Foundation (ASF) under one
+;;;; or more contributor license agreements. See the NOTICE file
+;;;; distributed with this work for additional information
+;;;; regarding copyright ownership. The ASF licenses this file
+;;;; to you under the Apache License, Version 2.0 (the
+;;;; "License"); you may not use this file except in compliance
+;;;; with the License. You may obtain a copy of the License at
+;;;;
+;;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;;
+;;;; Unless required by applicable law or agreed to in writing,
+;;;; software distributed under the License is distributed on an
+;;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+;;;; KIND, either express or implied. See the License for the
+;;;; specific language governing permissions and limitations
+;;;; under the License.
 
-;;; define a binary stream to wrap a vector for use in tests.
-;;; adapted from the cl-xml version to restrict i/o to unsigned byte operations.
-;;; this version uses a signed byte stream, as that's the basis of the thrift binary transport
-;;;
+;;;; define a binary stream to wrap a vector for use in tests.
+;;;; adapted from the cl-xml version to restrict i/o to unsigned byte operations.
+;;;; this version uses a signed byte stream, as that's the basis of the thrift binary transport
 
 ;;;
 ;;; abstract

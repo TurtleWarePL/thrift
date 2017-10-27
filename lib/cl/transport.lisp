@@ -1,39 +1,39 @@
 (in-package #:org.apache.thrift.implementation)
 
-;;; This file defines the core of the 'transport' layer for the `org.apache.thrift` library.
-;;;
-;;; copyright 2010 [james anderson](james.anderson@setf.de)
-;;;
-;;; Licensed to the Apache Software Foundation (ASF) under one
-;;; or more contributor license agreements. See the NOTICE file
-;;; distributed with this work for additional information
-;;; regarding copyright ownership. The ASF licenses this file
-;;; to you under the Apache License, Version 2.0 (the
-;;; "License"); you may not use this file except in compliance
-;;; with the License. You may obtain a copy of the License at
-;;;
-;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;;
-;;; Unless required by applicable law or agreed to in writing,
-;;; software distributed under the License is distributed on an
-;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-;;; KIND, either express or implied. See the License for the
-;;; specific language governing permissions and limitations
-;;; under the License.
+;;;; This file defines the core of the 'transport' layer for the `org.apache.thrift` library.
+;;;;
+;;;; copyright 2010 [james anderson](james.anderson@setf.de)
+;;;;
+;;;; Licensed to the Apache Software Foundation (ASF) under one
+;;;; or more contributor license agreements. See the NOTICE file
+;;;; distributed with this work for additional information
+;;;; regarding copyright ownership. The ASF licenses this file
+;;;; to you under the Apache License, Version 2.0 (the
+;;;; "License"); you may not use this file except in compliance
+;;;; with the License. You may obtain a copy of the License at
+;;;;
+;;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;;
+;;;; Unless required by applicable law or agreed to in writing,
+;;;; software distributed under the License is distributed on an
+;;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+;;;; KIND, either express or implied. See the License for the
+;;;; specific language governing permissions and limitations
+;;;; under the License.
 
 
-;;; The transport operators focus on the stream interface and supply the equivalents to the
-;;; Thrift standard operators in terms of the gray stream interface:
-;;;
-;;;  * open is superfluous. there is no use case for it, as they are not reused.
-;;;     the respective stream is opened as a side-effect of make-instance.
-;;;  * isOpen is implemented as methods for open-stream-p
-;;;  * close is implemented as transport-close to which stream-close/close delegates as per runtime
-;;;  * read-byte is implemented as methods for stream-read-byte
-;;;  * read-sequence is implemented as methods for stream-read-sequence
-;;;  * write-byte is implemented as methods for stream-write-byte
-;;;  * write-sequence is implemented as methods for stream-write-sequence
-;;;  * flush is implemented as a method on stream-finish-output
+;;;; The transport operators focus on the stream interface and supply the equivalents to the
+;;;; Thrift standard operators in terms of the gray stream interface:
+;;;;
+;;;;  * open is superfluous. there is no use case for it, as they are not reused.
+;;;;     the respective stream is opened as a side-effect of make-instance.
+;;;;  * isOpen is implemented as methods for open-stream-p
+;;;;  * close is implemented as transport-close to which stream-close/close delegates as per runtime
+;;;;  * read-byte is implemented as methods for stream-read-byte
+;;;;  * read-sequence is implemented as methods for stream-read-sequence
+;;;;  * write-byte is implemented as methods for stream-write-byte
+;;;;  * write-sequence is implemented as methods for stream-write-sequence
+;;;;  * flush is implemented as a method on stream-finish-output
 
 ;;;
 ;;; macros

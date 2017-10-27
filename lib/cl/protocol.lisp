@@ -1,60 +1,60 @@
 (in-package #:org.apache.thrift.implementation)
 
-;;; This file defines the abstract '`protocol` layer for the `org.apache.thrift` library.
-;;;
-;;; copyright 2010 [james anderson](james.anderson@setf.de)
-;;;
-;;; Licensed to the Apache Software Foundation (ASF) under one
-;;; or more contributor license agreements. See the NOTICE file
-;;; distributed with this work for additional information
-;;; regarding copyright ownership. The ASF licenses this file
-;;; to you under the Apache License, Version 2.0 (the
-;;; "License"); you may not use this file except in compliance
-;;; with the License. You may obtain a copy of the License at
-;;;
-;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;;
-;;; Unless required by applicable law or agreed to in writing,
-;;; software distributed under the License is distributed on an
-;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-;;; KIND, either express or implied. See the License for the
-;;; specific language governing permissions and limitations
-;;; under the License.
+;;;; This file defines the abstract '`protocol` layer for the `org.apache.thrift` library.
+;;;;
+;;;; copyright 2010 [james anderson](james.anderson@setf.de)
+;;;;
+;;;; Licensed to the Apache Software Foundation (ASF) under one
+;;;; or more contributor license agreements. See the NOTICE file
+;;;; distributed with this work for additional information
+;;;; regarding copyright ownership. The ASF licenses this file
+;;;; to you under the Apache License, Version 2.0 (the
+;;;; "License"); you may not use this file except in compliance
+;;;; with the License. You may obtain a copy of the License at
+;;;;
+;;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;;
+;;;; Unless required by applicable law or agreed to in writing,
+;;;; software distributed under the License is distributed on an
+;;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+;;;; KIND, either express or implied. See the License for the
+;;;; specific language governing permissions and limitations
+;;;; under the License.
 
 
-;;; The protocol class is the abstract root for comminucation protocol implementations.
-;;; It is specialized for each message structure
-;;;
-;;; protocol
-;;; - encoded-protocol
-;;;   - binary-protocol (see binary-protocol.lisp)
-;;;
-;;; The abstract class determines the abstract representation of message components in terms of
-;;; and arrangement of Thrift data types. Each concrete protocol class implements the codec for
-;;; base data types in terms of signed bytes and unsigned byte sequences. It then delegates to
-;;; its input/output transports to decode and encode that data in terms of the transport's
-;;; representation.
-;;; nb. there is a bnf, protocols are observed to eliminate and/or reorder fields at will. whatever.
+;;;; The protocol class is the abstract root for comminucation protocol implementations.
+;;;; It is specialized for each message structure
+;;;;
+;;;; protocol
+;;;; - encoded-protocol
+;;;;   - binary-protocol (see binary-protocol.lisp)
+;;;;
+;;;; The abstract class determines the abstract representation of message components in terms of
+;;;; and arrangement of Thrift data types. Each concrete protocol class implements the codec for
+;;;; base data types in terms of signed bytes and unsigned byte sequences. It then delegates to
+;;;; its input/output transports to decode and encode that data in terms of the transport's
+;;;; representation.
+;;;; nb. there is a bnf, protocols are observed to eliminate and/or reorder fields at will. whatever.
 
-;;; The stream interface operators are implemented in two forms. A generic interface is specialized
-;;; by protocol and/or actual data argument type. In addition a compiler-macro complement performs
-;;; compile-time in-line codec expansion when the data type is statically specified. As Thrift
-;;; requires all types to be declared statically, this compiles IDL files to in-line codecs.
-;;;
-;;; Type comparisons - both at compile-time and as run-time validation, are according to nominal equality.
-;;; As the Thrift type system permits no sub-typing, primtive types are a finite set and the struct/exception
-;;; classes permit no super-types.
-;;; The only variation would be to to permit integer subtypes for integer container elements, eg i8 sent
-;;; where i32 was declared, but that would matter only if supporting a compact protocol.
-;;;
-;;; Names exists in two domains:
-;;; - An 'identifier' is a string. They are used when the package is unknown, which is the situation at
-;;;   the start of a message. After that, a package is imputed from the association between a found message
-;;;   and its service context
-;;; - A 'name' uis a symbol. These are interned into a services 'namespace' when the idl is compiled.
-;;;   These interned names are compiled onto request/response functions and the struct codecs.
-;;;   When messages are read, the respective service's namespace package applies to intern identifiers
-;;;   to match them against decoding type constraints.
+;;;; The stream interface operators are implemented in two forms. A generic interface is specialized
+;;;; by protocol and/or actual data argument type. In addition a compiler-macro complement performs
+;;;; compile-time in-line codec expansion when the data type is statically specified. As Thrift
+;;;; requires all types to be declared statically, this compiles IDL files to in-line codecs.
+;;;;
+;;;; Type comparisons - both at compile-time and as run-time validation, are according to nominal equality.
+;;;; As the Thrift type system permits no sub-typing, primtive types are a finite set and the struct/exception
+;;;; classes permit no super-types.
+;;;; The only variation would be to to permit integer subtypes for integer container elements, eg i8 sent
+;;;; where i32 was declared, but that would matter only if supporting a compact protocol.
+;;;;
+;;;; Names exists in two domains:
+;;;; - An 'identifier' is a string. They are used when the package is unknown, which is the situation at
+;;;;   the start of a message. After that, a package is imputed from the association between a found message
+;;;;   and its service context
+;;;; - A 'name' uis a symbol. These are interned into a services 'namespace' when the idl is compiled.
+;;;;   These interned names are compiled onto request/response functions and the struct codecs.
+;;;;   When messages are read, the respective service's namespace package applies to intern identifiers
+;;;;   to match them against decoding type constraints.
 
 ;;;
 ;;; interface
