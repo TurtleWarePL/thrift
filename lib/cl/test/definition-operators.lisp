@@ -109,7 +109,7 @@
                                                (stream-read-message-end response-protocol))))))))
              (multiple-value-setq (request-protocol response-protocol)
                (make-test-protocol-peers :request-hook #'run-response))
-             
+
              (prog1 (and (equal (funcall 'thrift-test.test-service::test-method request-protocol 1 "testing")
                                 "1 testing")
                          ;; if the first test succeed, this should also be true
@@ -118,4 +118,3 @@
                ;;(fmakunbound 'thrift-test.test-service::test-method)
                ;;(fmakunbound 'thrift-test.test-service-response::test-method)
                )))))
-

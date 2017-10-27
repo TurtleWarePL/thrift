@@ -60,7 +60,6 @@
                  (thrift:stream-read-i32 thrift:stream-write-i32 ,(- (expt 2 31))  -1 0 1 ,(1- #x7700ff00) ,(1- (expt 2 31)))
                  (thrift:stream-read-i64 thrift:stream-write-i64 ,(- (expt 2 63))  -1 0 1 ,(1- #x77770000ffff0000) ,(1- (expt 2 63))))))))
 
-
 (deftest write-double-test ()
   (let ((stream (make-test-protocol)))
     (is (every #'(lambda (entry)
@@ -70,13 +69,11 @@
                                             ,most-positive-double-float ,least-positive-double-float
                                             0.0d0 1.0d0 -1.0d0))))))
 
-
 (deftest write-string-test ()
   (let ((stream (make-test-protocol)))
     (is (every #'(lambda (entry)
                    (apply #'test-read-write-equivalence stream entry))
                `((thrift:stream-read-string thrift:stream-write-string "a" "0123456789" ,*string-w/euro*))))))
-
 
 (deftest write-binary-test ()
   (let ((stream (make-test-protocol)))
@@ -84,7 +81,6 @@
                    (apply #'test-read-write-equivalence stream entry))
                ;; presuming (unsigned-byte 8)
                `((thrift:stream-read-binary thrift:stream-write-binary #( 0 1 255)))))))
-
 
 (deftest write-message-test ()
   (let ((struct (make-test-struct :field-one "one" :field-two 2))
@@ -100,7 +96,6 @@
         (is (typep response 'test-struct))
         (is (equal (test-struct-field-one response) "one"))
         (is (equal (test-struct-field-two response) 2))))))
-
 
 (deftest write-struct-test ()
   (let ((struct (make-test-struct :field-one "one" :field-two 2))
@@ -135,7 +130,6 @@
       (is (equal (test-large-struct-field-one result) 1))
       (is (equal (test-large-struct-field-two result) 2)))))
 
-
 (deftest write-field-test ()
   (let ((stream (make-test-protocol)))
     (is (every #'(lambda (entry)
@@ -148,7 +142,6 @@
                                    value)))
                    ,(lambda (p v) (thrift:stream-write-field p v :identifier-name "test" :identifier-number 10))
                    "a" "0123456789" ,*string-w/euro*))))))
-
 
 (deftest write-map-test ()
   (let ((stream (make-test-protocol)))
@@ -170,14 +163,12 @@
                                           (1.0d0 -1.0d0)
                                           (,(thrift:map 1 "a" 2 "b"))))))))
 
-
 (deftest write-set-test ()
   (let ((stream (make-test-protocol)))
     (is (every #'(lambda (entry)
                    (apply #'test-read-write-equivalence stream entry))
                `((thrift:stream-read-set thrift:stream-write-set
                                          (t nil) (1 2 3) (32767 1 -1 -32768)))))))
-
 
 #+(or ccl sbcl)
 (defun time-struct-io (&optional (count 1024))

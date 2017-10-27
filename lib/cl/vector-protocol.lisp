@@ -24,8 +24,7 @@
 ;;; define a binary stream to wrap a vector for use in tests.
 ;;; adapted from the cl-xml version to restrict i/o to unsigned byte operations.
 ;;; this version uses a signed byte stream, as that's the basis of the thrift binary transport
-;;; 
-
+;;;
 
 ;;;
 ;;; abstract
@@ -42,8 +41,7 @@
     :accessor stream-force-output-hook
     :documentation "A function of one argument, the stream, called as the
      base implementation of stream-force-output.")
-   (direction :initarg :direction)
-   )
+   (direction :initarg :direction))
   (:default-initargs
     #+CormanLisp :element-type #+CormanLisp 'character))
 
@@ -57,7 +55,6 @@
 
 (defclass vector-stream-transport (vector-input-stream vector-output-stream binary-transport)
   ((stream :initform nil)))
-
 
 (defun make-vector-stream-buffer (length &optional (type *binary-transport-element-type*))
   (make-array length :element-type type :initial-element 0))
@@ -170,9 +167,8 @@
                     byte))))
               stream))
 
-
 (defmethod stream-read-sequence ((stream vector-input-stream) (sequence vector)
-				 start end &key)
+                                 start end &key)
   (unless end (setf end (length sequence)))
   (assert (typep start '(integer 0)))
   (assert (>= end start))
@@ -185,10 +181,8 @@
         (setf position new-position))
       new-position)))
 
-
 ;;;
 ;;; output
-
 
 (defmethod stream-write-byte ((stream vector-output-stream) (datum integer) &aux next)
   (with-slots (position vector) stream
@@ -199,7 +193,6 @@
     (setf (aref vector position)
           (logand #xff datum))
     (setf position next)))
-
 
 #+mcl
 (defmethod ccl:stream-tyo ((stream vector-output-stream) byte)

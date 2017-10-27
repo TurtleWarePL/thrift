@@ -1,4 +1,4 @@
-(in-package :thrift.test-implementation)
+(in-package #:thrift.test-implementation)
 
 (defun thrift.test.thrift-test-implementation:test-void ()
   (format t "testVoid()~%"))
@@ -69,7 +69,7 @@
 
 (defun thrift.test.thrift-test-implementation:test-insanity (argument)
   (let ((result `((1 . ((2 . ,argument) (3 . ,argument)))
-		  (2 . ((6 . ,(thrift.test::make-insanity :user-map nil :xtructs nil)))))))
+                  (2 . ((6 . ,(thrift.test::make-insanity :user-map nil :xtructs nil)))))))
     (format t "~a~%" result)
     result))
 
@@ -77,36 +77,36 @@
   (declare (ignorable arg3 arg4 arg5))
   (format t "testMulti()~%")
   (thrift.test:make-xtruct :string-thing "Hello2"
-			   :byte-thing arg0
-			   :i32-thing arg1
-			   :i64-thing arg2))
+                           :byte-thing arg0
+                           :i32-thing arg1
+                           :i64-thing arg2))
 
 (defun thrift.test.thrift-test-implementation:test-exception (arg)
   (format t "testException(~a)~%" arg)
   (cond
     ((string= arg "Xception") (error 'thrift.test:xception
-				     :error-code 1001
-				     :message arg))
+                                     :error-code 1001
+                                     :message arg))
     ((string= arg "TException") (error 'thrift.test:xception
-				       :error-code 0
-				       :message "Stuff!"))))
+                                       :error-code 0
+                                       :message "Stuff!"))))
 
 (defun thrift.test.thrift-test-implementation:test-multi-exception (arg0 arg1)
   (format t "testMultiException(~a, ~a)~%" arg0 arg1)
   (cond
     ((string= arg0 "Xception") (error 'thrift.test:xception
-				     :error-code 1001
-				     :message "This is an Xception"))
+                                     :error-code 1001
+                                     :message "This is an Xception"))
     ((string= arg0 "Xception2") (error 'thrift.test:xception2
-				     :error-code 2002
-				     :struct-thing (thrift.test:make-xtruct :string-thing "This is an Xception2"
-									    :byte-thing 0
-									    :i32-thing 0
-									    :i64-thing 0))))
+                                     :error-code 2002
+                                     :struct-thing (thrift.test:make-xtruct :string-thing "This is an Xception2"
+                                                                            :byte-thing 0
+                                                                            :i32-thing 0
+                                                                            :i64-thing 0))))
   (thrift.test:make-xtruct :string-thing arg1
-			   :byte-thing 0
-			   :i32-thing 0
-			   :i64-thing 0))
+                           :byte-thing 0
+                           :i32-thing 0
+                           :i64-thing 0))
 
 (defun thrift.test.thrift-test-implementation:test-oneway (seconds)
   (format t "testOneway(~a): Sleeping...~%" seconds)

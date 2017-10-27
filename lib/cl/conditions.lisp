@@ -11,9 +11,9 @@
 ;;; to you under the Apache License, Version 2.0 (the
 ;;; "License"); you may not use this file except in compliance
 ;;; with the License. You may obtain a copy of the License at
-;;; 
+;;;
 ;;;   http://www.apache.org/licenses/LICENSE-2.0
-;;; 
+;;;
 ;;; Unless required by applicable law or agreed to in writing,
 ;;; software distributed under the License is distributed on an
 ;;; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -33,7 +33,7 @@
 ;;; - unknown-field-error (cell-error)
 ;;; - field-type-error (type-error)
 ;;; - transport-error
-;;; 
+;;;
 
 
 ;;; abstract exceptions
@@ -159,7 +159,7 @@
 (defmethod thrift-error-format-arguments ((error field-size-error))
   (append (call-next-method)
           (list (field-size-error-number error)
-                (cell-error-name error) 
+                (cell-error-name error)
                 (type-error-datum error)
                 (type-error-expected-type error))))
 
@@ -176,15 +176,14 @@
   (append (call-next-method)
           (list (field-type-error-structure-type error)
                 (field-type-error-number error)
-                (type-error-expected-type error) 
-                (cell-error-name error) 
+                (type-error-expected-type error)
+                (cell-error-name error)
                 (type-error-datum error))))
 
 (define-condition sequence-number-error (application-error)
   ((type :initform *application-ex-bad-sequence-id*)
    (number :initarg :number :reader sequence-number-error-number)
    (expected-number :initarg :expected-number :reader sequence-number-error-expected-number)))
-  
 
 (defmethod thrift-error-format-control ((error sequence-number-error))
   (concatenate 'string (call-next-method)
@@ -207,8 +206,8 @@
 (defmethod thrift-error-format-arguments ((error unknown-field-error))
   (append (call-next-method)
           (list (unknown-field-error-structure-type error)
-                (unknown-field-error-number error) 
-                (cell-error-name error) 
+                (unknown-field-error-number error)
+                (cell-error-name error)
                 (unknown-field-error-datum error))))
 
 (define-condition unknown-method-error (protocol-error )

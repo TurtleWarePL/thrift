@@ -3,7 +3,7 @@
 ;;; being set with a client connection to the TestServer. Normally,
 ;;; this is handled in make-test-client.lisp.
 
-(in-package :thrift-cross)
+(in-package #:thrift-cross)
 
 ;;; Standard Thrift cross-test error codes
 (defparameter *test_basetypes* 1)
@@ -16,31 +16,33 @@
 (defun cross-test (&key (multiplexed nil))
   "The main cross-test runner."
   (let ((result nil))
-    (handler-case (progn (unless (run-package-tests :package :base-types)
-			   (pushnew *test_basetypes* result))
-			 (unless (run-package-tests :package :structs)
-			   (pushnew *test_structs* result))
-			 (unless (run-package-tests :package :containers)
-			   (pushnew *test_containers* result))
-			 (unless (run-package-tests :package :exceptions)
-			   (pushnew *test_exceptions* result))
-			 (unless (run-package-tests :package :misc)
-                           (pushnew *test_unknown* result))
-                         
-                         ;; It doesn't seem like anyone actually uses
-                         ;; the second test service when testing multiplexing,
-                         ;; so this would fail against servers in other
-                         ;; languages. For now, anyway.
-                         #+(or)
-                         (when multiplexed
-                           (unless (run-package-tests :package :multiplex)
-                             (pushnew *test_unknown* result))))
+    (handler-case
+        (progn
+          (unless (run-package-tests :package :base-types)
+            (pushnew *test_basetypes* result))
+          (unless (run-package-tests :package :structs)
+            (pushnew *test_structs* result))
+          (unless (run-package-tests :package :containers)
+            (pushnew *test_containers* result))
+          (unless (run-package-tests :package :exceptions)
+            (pushnew *test_exceptions* result))
+          (unless (run-package-tests :package :misc)
+            (pushnew *test_unknown* result))
+
+          ;; It doesn't seem like anyone actually uses
+          ;; the second test service when testing multiplexing,
+          ;; so this would fail against servers in other
+          ;; languages. For now, anyway.
+          #+(or)
+          (when multiplexed
+            (unless (run-package-tests :package :multiplex)
+              (pushnew *test_unknown* result))))
       (error (e) (pushnew *test_unknown* result)))
     (apply #'+ result)))
 
-(fiasco:define-test-package :base-types)
+(fiasco:define-test-package #:base-types)
 
-(in-package :base-types)
+(in-package #:base-types)
 
 (defconstant *lang-string* "Afrikaans, Alemannisch, Aragonés, العربية, مصرى, Asturianu, Aymar aru, Azərbaycan, Башҡорт, Boarisch, Žemaitėška, Беларуская, Беларуская (тарашкевіца), Български, Bamanankan, বাংলা, Brezhoneg, Bosanski, Català, Mìng-dĕ̤ng-ngṳ̄, Нохчийн, Cebuano, ᏣᎳᎩ, Česky, Словѣ́ньскъ / ⰔⰎⰑⰂⰡⰐⰠⰔⰍⰟ, Чӑвашла, Cymraeg, Dansk, Zazaki, ދިވެހިބަސް, Ελληνικά, Emiliàn e rumagnòl, English, Esperanto, Español, Eesti, Euskara, فارسی, Suomi, Võro, Føroyskt, Français, Arpetan, Furlan, Frysk, Gaeilge, 贛語, Gàidhlig, Galego, Avañe'ẽ, ગુજરાતી, Gaelg, עברית, हिन्दी, Fiji Hindi, Hrvatski, Kreyòl ayisyen, Magyar, Հայերեն, Interlingua, Bahasa Indonesia, Ilokano, Ido, Íslenska, Italiano, 日本語, Lojban, Basa Jawa, ქართული, Kongo, Kalaallisut, ಕನ್ನಡ, 한국어, Къарачай-Малкъар, Ripoarisch, Kurdî, Коми, Kernewek, Кыргызча, Latina, Ladino, Lëtzebuergesch, Limburgs, Lingála, ລາວ, Lietuvių, Latviešu, Basa Banyumasan, Malagasy, Македонски, മലയാളം, मराठी, مازِرونی, Bahasa Melayu, Nnapulitano, Nedersaksisch, नेपाल भाषा, Nederlands, ‪Norsk (nynorsk)‬, ‪Norsk (bokmål)‬, Nouormand, Diné bizaad, Occitan, Иронау, Papiamentu, Deitsch, Polski, پنجابی, پښتو, Norfuk / Pitkern, Português, Runa Simi, Rumantsch, Romani, Română, Русский, Саха тыла, Sardu, Sicilianu, Scots, Sámegiella, Simple English, Slovenčina, Slovenščina, Српски / Srpski, Seeltersk, Svenska, Kiswahili, தமிழ், తెలుగు, Тоҷикӣ, ไทย, Türkmençe, Tagalog, Türkçe, Татарча/Tatarça, Українська, اردو, Tiếng Việt, Volapük, Walon, Winaray, 吴语, isiXhosa, ייִדיש, Yorùbá, Zeêuws, 中文, Bân-lâm-gú, 粵語")
 
@@ -77,7 +79,7 @@
 (deftest string-test ()
   (is (string= (thrift.test.thrift-test:test-string thrift-cross::*prot* "") ""))
   (is (string= (thrift.test.thrift-test:test-string thrift-cross::*prot* "(defun botsbuildbots () (botsbuilsbots))")
-	       "(defun botsbuildbots () (botsbuilsbots))"))
+               "(defun botsbuildbots () (botsbuilsbots))"))
   (is (string= (thrift.test.thrift-test:test-string thrift-cross::*prot* *lang-string*) *lang-string*))
   (is (string= (thrift.test.thrift-test:test-string thrift-cross::*prot* *trick-string*) *trick-string*)))
 
@@ -93,10 +95,9 @@
 (deftest typedef-test ()
   (is (= (thrift.test.thrift-test:test-typedef thrift-cross::*prot* 309858235082523) 309858235082523)))
 
+(fiasco:define-test-package #:structs)
 
-(fiasco:define-test-package :structs)
-
-(in-package :structs)
+(in-package #:structs)
 
 (defparameter *test-struct* (thrift.test:make-xtruct :string-thing "Hell is empty."
                                                      :byte-thing -2
@@ -104,39 +105,39 @@
                                                      :i64-thing 42424242))
 
 (defparameter *test-nest* (thrift.test:make-xtruct2 :byte-thing 42
-						    :struct-thing *test-struct*
-						    :i32-thing -42))
+                                                    :struct-thing *test-struct*
+                                                    :i32-thing -42))
 
 (deftest struct-test ()
   (let ((rec-struct (thrift.test.thrift-test:test-struct thrift-cross::*prot* *test-struct*)))
     (is (string= (thrift.test:xtruct-string-thing *test-struct*)
-		 (thrift.test:xtruct-string-thing rec-struct)))
+                 (thrift.test:xtruct-string-thing rec-struct)))
     (is (= (thrift.test:xtruct-byte-thing *test-struct*)
-	   (thrift.test:xtruct-byte-thing rec-struct)))
+           (thrift.test:xtruct-byte-thing rec-struct)))
     (is (= (thrift.test:xtruct-i32-thing *test-struct*)
-	   (thrift.test:xtruct-i32-thing rec-struct)))
+           (thrift.test:xtruct-i32-thing rec-struct)))
     (is (= (thrift.test:xtruct-i64-thing *test-struct*)
-	   (thrift.test:xtruct-i64-thing rec-struct)))))
+           (thrift.test:xtruct-i64-thing rec-struct)))))
 
 (deftest nest-test ()
   (let* ((rec-nest (thrift.test.thrift-test:test-nest thrift-cross::*prot* *test-nest*))
-	 (rec-struct (thrift.test:xtruct2-struct-thing rec-nest)))
+         (rec-struct (thrift.test:xtruct2-struct-thing rec-nest)))
     (is (string= (thrift.test:xtruct-string-thing *test-struct*)
-		 (thrift.test:xtruct-string-thing rec-struct)))
+                 (thrift.test:xtruct-string-thing rec-struct)))
     (is (= (thrift.test:xtruct-byte-thing *test-struct*)
-	   (thrift.test:xtruct-byte-thing rec-struct)))
+           (thrift.test:xtruct-byte-thing rec-struct)))
     (is (= (thrift.test:xtruct-i32-thing *test-struct*)
-	   (thrift.test:xtruct-i32-thing rec-struct)))
+           (thrift.test:xtruct-i32-thing rec-struct)))
     (is (= (thrift.test:xtruct-i64-thing *test-struct*)
-	   (thrift.test:xtruct-i64-thing rec-struct)))
+           (thrift.test:xtruct-i64-thing rec-struct)))
     (is (= (thrift.test:xtruct2-byte-thing *test-nest*)
-	   (thrift.test:xtruct2-byte-thing rec-nest)))
+           (thrift.test:xtruct2-byte-thing rec-nest)))
     (is (= (thrift.test:xtruct2-i32-thing *test-nest*)
-	   (thrift.test:xtruct2-i32-thing rec-nest)))))
+           (thrift.test:xtruct2-i32-thing rec-nest)))))
 
-(fiasco:define-test-package :containers)
+(fiasco:define-test-package #:containers)
 
-(in-package :containers)
+(in-package #:containers)
 
 (deftest list-test ()
   (is (null (thrift.test.thrift-test:test-list thrift-cross::*prot* nil)))
@@ -145,7 +146,7 @@
 (deftest set-test ()
   (is (null (thrift.test.thrift-test:test-set thrift-cross::*prot* nil)))
   (is (equal (sort (thrift.test.thrift-test:test-set thrift-cross::*prot* (list 42 -42 0 5)) #'<)
-	     '(-42 0 5 42))))
+             '(-42 0 5 42))))
 
 (defun map= (map1 map2 &key (car-predicate #'equal) (cdr-predicate #'equal))
   "Compare two assoc maps according to the predicates given."
@@ -166,25 +167,25 @@
               (4 . ((1 . 1) (2 . 2) (3 . 3) (4 . 4))))
             :cdr-predicate #'map=)))
 
-(fiasco:define-test-package :exceptions)
+(fiasco:define-test-package #:exceptions)
 
-(in-package :exceptions)
+(in-package #:exceptions)
 
 (defun test-xception (expected-code expected-message function &rest args)
   "A helper function to test whether xception is signalled, and whether its fields have the expected values."
   (handler-case (progn (apply function args)
-		       nil)
+                       nil)
     (thrift.test:xception (ex) (and (= (thrift.test::xception-error-code ex) expected-code)
-				    (string= (thrift.test::xception-message ex) expected-message)))))
+                                    (string= (thrift.test::xception-message ex) expected-message)))))
 
 (defun test-xception2 (expected-code expected-message function &rest args)
   "A helper function to test whether xception2 is signalled, and whether its fields have the expected values."
   (handler-case (progn (apply function args)
-		       nil)
+                       nil)
     (thrift.test:xception2 (ex) (and (= (thrift.test::xception2-error-code ex) expected-code)
-				     (string= (thrift.test::xtruct-string-thing
-					       (thrift.test::xception2-struct-thing ex))
-					      expected-message)))))
+                                     (string= (thrift.test::xtruct-string-thing
+                                               (thrift.test::xception2-struct-thing ex))
+                                              expected-message)))))
 
 (deftest exception-test ()
   (is (test-xception 1001 "Xception" #'thrift.test.thrift-test:test-exception thrift-cross::*prot* "Xception"))
@@ -193,32 +194,32 @@
 
 (deftest multi-exception-test ()
   (is (test-xception 1001
-		     "This is an Xception"
-		     #'thrift.test.thrift-test:test-multi-exception
-		     thrift-cross::*prot*
-		     "Xception"
-		     "meaningless"))
+                     "This is an Xception"
+                     #'thrift.test.thrift-test:test-multi-exception
+                     thrift-cross::*prot*
+                     "Xception"
+                     "meaningless"))
   (is (test-xception2 2002
-		      "This is an Xception2"
-		      #'thrift.test.thrift-test:test-multi-exception
-		      thrift-cross::*prot*
-		      "Xception2"
-		      "meaningless too!"))
+                      "This is an Xception2"
+                      #'thrift.test.thrift-test:test-multi-exception
+                      thrift-cross::*prot*
+                      "Xception2"
+                      "meaningless too!"))
   (is (string= "foobar" (thrift.test:xtruct-string-thing
-			 (thrift.test.thrift-test:test-multi-exception thrift-cross::*prot*
-							   "success!"
-							   "foobar")))))
+                         (thrift.test.thrift-test:test-multi-exception thrift-cross::*prot*
+                                                           "success!"
+                                                           "foobar")))))
 
-(fiasco:define-test-package :misc)
+(fiasco:define-test-package #:misc)
 
-(in-package :misc)
+(in-package #:misc)
 
 (deftest oneway-test ()
   (is (null (thrift.test.thrift-test:test-oneway thrift-cross::*prot* 1))))
 
-(fiasco:define-test-package :multiplex)
+(fiasco:define-test-package #:multiplex)
 
-(in-package :multiplex)
+(in-package #:multiplex)
 
 (deftest multiplex-test ()
   (finishes (thrift.test.second-service:blah-blah thrift-cross::*prot*))

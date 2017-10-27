@@ -28,9 +28,7 @@
 (net.didierverna.clon:nickname-package)
 
 (defun main ()
-  (let ((result (if (fiasco:run-tests 'thrift-test)
-                    0
-                    -1)))
+  (let ((result (if (fiasco:run-tests 'thrift-test) 0 -1)))
     (clon:exit result)))
 
 (clon:dump "run-tests" main)

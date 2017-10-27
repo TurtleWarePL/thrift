@@ -35,7 +35,6 @@
 ;;;  * write-sequence is implemented as methods for stream-write-sequence
 ;;;  * flush is implemented as a method on stream-finish-output
 
-
 ;;;
 ;;; macros
 
@@ -67,7 +66,6 @@
 (define-compiler-macro unsigned-byte-8 (datum)
   `(logand ,datum #xff))
 
-
 ;;;
 ;;; classes
 
@@ -77,10 +75,7 @@
   (:documentation "The abstract transport class is a specialized stream which wraps a base binary
  stream - a file or a socket, with methods which codec operators for primitive data types."))
 
-
-(defclass binary-transport (transport)
-  ())
-
+(defclass binary-transport (transport) ())
 
 (defclass socket-transport (binary-transport)
   ()
@@ -91,7 +86,6 @@
    ;; delegation, as make-instance does not return a usable stream in all implementations
    (stream :accessor transport-stream)))
 
-
 ;;;
 ;;; initialization
 
@@ -100,7 +94,6 @@
 (defmethod initialize-instance ((transport socket-transport) &key socket)
   (call-next-method)
   (setf (slot-value transport 'stream) (usocket:socket-stream socket)))
-
 
 (defun socket-transport (location &rest initargs
                                   &key (element-type *binary-transport-element-type*) (direction :io d-s))
@@ -114,8 +107,6 @@
                    :element-type element-type
                    initargs)))
 
-
-
 (defmethod initialize-instance ((transport file-transport) &key pathname stream
                                 (direction :output)
                                 (element-type *binary-transport-element-type*)
@@ -126,7 +117,6 @@
             (open (or pathname (error "A pathname is required."))
                   :direction direction :element-type element-type
                   :if-exists if-exists :if-does-not-exist if-does-not-exist))))
-
 
 (defun file-transport (pathname &rest initargs
                                 &key (element-type *binary-transport-element-type*))

@@ -31,15 +31,12 @@
    :version-id #x80
     :version-number #x01))
 
-
-
 ;;;
 ;;; type  code <-> name operators are specific to each protocol
 
 (defmethod type-code-name ((protocol binary-protocol) (type-code fixnum))
   (or (car (rassoc type-code *binary-transport-types* :test #'eql))
       (error "Invalid type code: ~s." type-code)))
-
 
 (defmethod type-name-code ((protocol binary-protocol) (type-name symbol))
   (or (cdr (assoc type-name *binary-transport-types*))
@@ -56,7 +53,6 @@
 (defmethod message-type-name ((protocol binary-protocol) (type-code fixnum))
   (or (car (rassoc type-code *binary-message-types* :test 'eql))
       (error "Invalid message type code: ~s." type-code)))
-
 
 ;;; input
 
@@ -96,7 +92,6 @@
   (defmethod stream-read-i64 ((protocol binary-protocol))
     (read-and-decode-integer protocol 8)))
 
-
 (defmethod stream-read-double ((protocol binary-protocol))
   (let ((value 0)
         (buffer (make-array 8 :element-type '(unsigned-byte 8))))
@@ -134,14 +129,12 @@
       (unpack-buffer)
       (ieee-floats:decode-float32 value))))
 
-
 (defmethod stream-read-string ((protocol binary-protocol))
   (let* ((l (stream-read-i32 protocol))
          (a (make-array l :element-type *binary-transport-element-type*)))
     (declare (dynamic-extent a))
     (stream-read-sequence (protocol-input-transport protocol) a 0 nil)
     (funcall (transport-string-decoder protocol) a)))
-
 
 (defmethod stream-read-binary ((protocol binary-protocol))
   "Read an 'unencoded' binary array.
@@ -155,11 +148,7 @@
     (stream-read-sequence (protocol-input-transport protocol) result 0 nil)
     result))
 
-
-
-
 ;;; output
-
 
 (defmethod stream-write-type ((protocol binary-protocol) type-name)
   (stream-write-byte (protocol-output-transport protocol) (type-name-code protocol type-name))
@@ -168,17 +157,13 @@
 (defmethod stream-write-message-type ((protocol binary-protocol) message-type-name)
   (stream-write-i16 protocol (message-type-code protocol message-type-name)))
 
-
-
 (defmethod stream-write-bool ((protocol binary-protocol) val)
   (stream-write-byte (protocol-output-transport protocol) (if val 1 0))
   1)
 
-
 (defmethod stream-write-i8 ((protocol binary-protocol) val)
   (stream-write-byte (protocol-output-transport protocol) val)
   1)
-
 
 (macrolet ((encode-and-write-integer (protocol value byte-count)
              `(let ((buffer (make-array ,byte-count :element-type '(unsigned-byte 8))))
@@ -202,7 +187,6 @@
 
   (defmethod stream-write-i64 ((protocol binary-protocol) val)
     (encode-and-write-integer protocol val 8)))
-
 
 (defmethod stream-write-double ((protocol binary-protocol) val)
   ;; distinct from i64, as it's unsigned
@@ -242,7 +226,6 @@
     (stream-write-sequence (protocol-output-transport protocol) buffer 0 nil)
     4))
 
-
 (defmethod stream-write-string ((protocol binary-protocol) (string string) &optional (start 0) end)
   (assert (and (zerop start) (or (null end) (= end (length string)))) ()
           "Substring writes are not supported.")
@@ -257,7 +240,6 @@
   (stream-write-i32 protocol (length bytes))
   (stream-write-sequence (protocol-output-transport protocol) bytes 0 nil)
   (+ 4 (length bytes)))
-
 
 (defmethod stream-write-binary ((protocol binary-protocol) (bytes vector))
   (let ((unsigned-bytes (make-array (length bytes) :element-type '(unsigned-byte 8))))
