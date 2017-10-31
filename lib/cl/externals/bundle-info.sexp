@@ -1,13 +1,14 @@
-(:CREATION-TIME #A((20) BASE-CHAR . "2017-10-13T19:48:51Z") :REQUESTED-SYSTEMS
- ("puri" "usocket" "closer-mop" "trivial-utf-8" "ieee-floats" "alexandria")
+(:CREATION-TIME #A((20) BASE-CHAR . "2017-10-31T11:49:23Z") :REQUESTED-SYSTEMS
+ (ALEXANDRIA BORDEAUX-THREADS CL-PPCRE NET.DIDIERVERNA.CLON FIASCO PURI USOCKET
+  CLOSER-MOP TRIVIAL-UTF-8 TRIVIAL-GRAY-STREAMS IEEE-FLOATS)
  :LISP-INFO
- (:MACHINE-INSTANCE "sun-wukong" :MACHINE-TYPE #A((6) BASE-CHAR . "X86-64")
-  :MACHINE-VERSION "Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz"
+ (:MACHINE-INSTANCE "tomtoo" :MACHINE-TYPE #A((6) BASE-CHAR . "X86-64")
+  :MACHINE-VERSION "Intel(R) Core(TM) i5-6300HQ CPU @ 2.30GHz"
   :LISP-IMPLEMENTATION-TYPE #A((4) BASE-CHAR . "SBCL")
-  :LISP-IMPLEMENTATION-VERSION #A((6) BASE-CHAR . "1.3.20"))
+  :LISP-IMPLEMENTATION-VERSION #A((5) BASE-CHAR . "1.4.0"))
  :QUICKLISP-INFO
- (:HOME #A((21) BASE-CHAR . "/home/jack/quicklisp/") :LOCAL-PROJECT-DIRECTORIES
-  (#A((36) BASE-CHAR . "/home/jack/quicklisp/local-projects/")) :DISTS
+ (:HOME #A((20) BASE-CHAR . "/home/tom/quicklisp/") :LOCAL-PROJECT-DIRECTORIES
+  (#A((35) BASE-CHAR . "/home/tom/quicklisp/local-projects/")) :DISTS
   ((:NAME "quicklisp" :DIST-URL
-    "http://beta.quicklisp.org/dist/quicklisp/2017-08-30/distinfo.txt" :VERSION
-    "2017-08-30"))))
+    "http://beta.quicklisp.org/dist/quicklisp/2017-10-23/distinfo.txt" :VERSION
+    "2017-10-23"))))
