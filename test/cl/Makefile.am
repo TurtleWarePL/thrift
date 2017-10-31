@@ -31,3 +31,8 @@ clean-local:
 	$(RM) TestServer
 	$(RM) TestClient
 
+EXTRA_DIST = \
+	implementation.lisp \
+	make-test-client.lisp \
+	make-test-server.lisp \
+	tests.lisp
