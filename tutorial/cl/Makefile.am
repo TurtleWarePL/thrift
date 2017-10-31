@@ -22,18 +22,22 @@ gen-cl: $(top_srcdir)/tutorial/tutorial.thrift
 
 all-local: gen-cl
 	$(SBCL) --script make-tutorial-server.lisp
+	$(SBCL) --script make-tutorial-client.lisp
 
 tutorialserver: all
 	./TutorialServer
 
 tutorialclient: all
+	./TutorialClient
 
 clean-local:
 	$(RM) -r gen-*
 	$(RM) TutorialServer
+	$(RM) TutorialClient
 
 EXTRA_DIST = \
 	tutorial-implementation.lisp \
 	shared-implementation.lisp \
 	thrift-tutorial.asd \
-	make-tutorial-server.lisp
+	make-tutorial-server.lisp \
+	make-tutorial-client.lisp
