@@ -16,7 +16,6 @@
 
 (require "asdf")
 (load (merge-pathnames "../../lib/cl/load-locally.lisp" *load-truename*))
-(load (merge-pathnames "externals/bundle.lisp" *load-truename*))
 (asdf:load-system :net.didierverna.clon)
 (asdf:load-system :fiasco)
 (asdf:load-asd (merge-pathnames "gen-cl/ThriftTest/thrift-gen-ThriftTest.asd" *load-truename*))
