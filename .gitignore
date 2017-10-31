@@ -338,6 +338,8 @@ project.lock.json
 /test/rs/target/
 /test/rs/*.iml
 /test/rs/**/*.iml
+/tutorial/cl/TutorialClient
+/tutorial/cl/TutorialServer
 /tutorial/cpp/TutorialClient
 /tutorial/cpp/TutorialServer
 /tutorial/c_glib/tutorial_client
