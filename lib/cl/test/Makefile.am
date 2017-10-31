@@ -27,3 +27,15 @@ check-local: test-build
 
 clean-local:
 	$(RM) run-tests
+
+EXTRA_DIST = \
+	conditions.lisp \
+	make-test-binary.lisp \
+	protocol.lisp \
+	test.lisp \
+	utils.lisp \
+	definition-operators.lisp \
+	package.lisp \
+	setup.lisp \
+	thrift-test.asd \
+	vector-protocol.lisp

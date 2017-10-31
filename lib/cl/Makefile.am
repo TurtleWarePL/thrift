@@ -23,3 +23,23 @@ if WITH_TESTS
 SUBDIRS += test
 endif
 
+EXTRA_DIST = \
+	externals \
+	README.md \
+	READMES \
+	binary-protocol.lisp \
+	classes.lisp \
+	client.lisp \
+	conditions.lisp \
+	definition-operators.lisp \
+	framed-transport.lisp \
+	load-locally.lisp \
+	package.lisp \
+	parameters.lisp \
+	protocol.lisp \
+	server.lisp \
+	symbols.lisp \
+	thrift.asd \
+	transport.lisp \
+	types.lisp \
+	vector-protocol.lisp
