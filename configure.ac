@@ -859,6 +859,7 @@ AC_CONFIG_FILES([
   test/rs/Makefile
   tutorial/Makefile
   tutorial/c_glib/Makefile
+  tutorial/cl/Makefile
   tutorial/cpp/Makefile
   tutorial/d/Makefile
   tutorial/go/Makefile
