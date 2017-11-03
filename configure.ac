@@ -925,6 +925,7 @@ echo
 echo "Building C (GLib) Library .... : $have_c_glib"
 echo "Building C# (Mono) Library ... : $have_csharp"
 echo "Building C++ Library ......... : $have_cpp"
+echo "Building Common Lisp Library.. : $have_cl"
 echo "Building D Library ........... : $have_d"
 echo "Building Dart Library ........ : $have_dart"
 echo "Building dotnetcore Library .. : $have_dotnetcore"
@@ -942,7 +943,6 @@ echo "Building Python Library ...... : $have_python"
 echo "Building Py3 Library ......... : $have_py3"
 echo "Building Ruby Library ........ : $have_ruby"
 echo "Building Rust Library ........ : $have_rs"
-echo "Building Common Lisp Library.. : $have_cl"
 
 if test "$have_csharp" = "yes" ; then
   echo
